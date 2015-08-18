@@ -1,0 +1,641 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: chapter03.tex,v 1.1 2008/05/07 06:59:44 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{交互的基础：输入/输出函数}
+本章介绍程序与用户交互的最传统同时也是最基本的方法，即通过命令行方式的交互。通过
+本章的学习，我们将掌握如何通过屏幕显示和键盘输入与程序的用户进行交流\footnote{本章
+介绍的输入输出函数的头文件是$<$stdio.h$>$。}。
+
+\section{从实例开始}
+让我们从一段程序开始，阅读下面一段程序(pro-3-1.c)，并在计算机上编译运行，看看运
+行结果如何？ 
+\begin{verbatim}
+  #include <stdio.h>
+  #include <string.h>
+
+  int main(void)
+  {
+    char name[30];
+    int age;
+    float weight;
+    int size;
+  
+    printf("Hello! Welcome to world of loongson!\n");
+    printf("Please answer the following questions:\n");
+    printf("What's your first name? \n");
+    scanf("%s", name);
+    printf("How old are you, %s?\n", name);
+    scanf("%d", &age);
+    printf("Tell me your weight in kg?\n");
+    scanf("%f", &weight);
+    printf("My friend %s, you are %d years old,\n", 
+   	   name, age); 
+    printf(" with the weight of %2.3f \
+  kg.\n", weight);
+    size = strlen(name)*sizeof(char);
+    size += sizeof age;
+    size += sizeof weight;
+    printf("We need %d bytes to store your "
+	   "information.\n", size);
+  
+    return 0;
+  }
+\end{verbatim}
+
+
+这段程序的运行结果如下：
+\begin{verbatim}
+  Hello! Welcome to world of loongson!
+  Please answer the following questions:
+  What's your first name?
+  (Qi) 
+  How old are you, Qi?
+  (25)
+  Tell me your weight in kg?
+  (65)
+  My friend Qi, you are 25 years old, 
+   with the weight of 65.000 kg.
+  We need 10 bytes to store your information.
+\end{verbatim}
+其中括号内的部分是用户通过键盘输入的内容，这是一个典型的控制台交互的实例，在这段
+程序里，程序询问了用户的名字、年龄以及体重，并计算出这些信息需要多少字节的存储空
+间。接下来，我们将详细解释上面例子中用到的语句和函数。
+
+
+
+\section{printf()：格式化输出}
+C语言是如此的简洁，以至于在C语言的关键字中没有关于输入输出的定义，而是依靠库函数
+完成输入输出功能。其实这也是C语言的聪明之处，因为即使是控制台输出，不同的设备也
+有很大差
+异，而基于库函数的实现方式可以最大程度的保证C语言在不同硬件结构上的通用性，这点
+对于C语言这样一个历史悠久、支持平台众多的语言有着不同寻常的意义。
+
+printf()也许是C语言学习者认识的第一个库函数，往往在完全了解函数的概念之前就已经
+多次看到这个函数了，聪明的读者大概已经从见到的例子中推测出这个函数的用法了。
+printf()是一个
+格式化输出函数，它是通过格式字符来控制输出/输入内容的格式，
+和它相伴的是scanf()函数，它们具有相同格式的参数列表，即都是先声明格式控制描述，
+再给出参数列表。
+
+下面来正式认识一下printf()函数，printf()是格式化打印函数，其使用格式为：
+\begin{verbatim}
+  printf(CONTROL-STRING, ITEM1, ITEM2, ...);
+\end{verbatim}
+
+\verb=ITEM1、ITEM2=等是要打印的数据，可以是各种类型的常量或变量，也可以是一个表
+达式，在打印之前计算该表达式的值。控制字符串(\verb=CONTROL-STRING=)是一个描述数
+据如何打印的字符
+串，控制字符串包括两部分内容：控制台显示的字符和要打印数据的转换说明符。
+
+\subsection{转换说明符}
+我们用下面的例子来说明控制字符串的内容：
+\begin{verbatim}
+  printf("Dear %s, you are %d years old\n", name, age); 
+\end{verbatim}
+
+上面printf函数参数中，双引号内的部分就是控制字符串，百分号“\%”及其后所跟的字符
+称为转换说
+明符，其他字符则会按照原样显示在控制台上(另外，还有一个特殊符号“\verb=\n=”，
+它是换行符)。转换说明符“\%s”和“\%d”分别说明想要打印的数据“name”和“age”的
+类型
+是字符串和整型，转换说明符的数量必须与随后变量表中的变量数严格一直，两者从左到右
+相互对应。如果转换说明符和要打印数据的类型不一致，可能会出现意想不到的结果
+甚至编译错误，试试将上面语句中的“\%d”换成“\%c”，看看输出的结果变成什么了？
+更多的转换说明符见表\ref{table_3_1}：
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{printf()的转换说明符}
+\label{table_3_1}
+\begin{center}
+\begin{tabular}{|c|p{11cm}|}%{c|l}
+\hline
+转换说明符 & \multicolumn{1}{c|}{输~~出~~格~~式}  \\
+\hline
+\%c & 输出一个字符 \\
+\%d & 有符号十进制整数 \\
+\%i & 有符号十进制整数~(与\%d相同) \\
+\%u & 无符号十进制整数 \\
+\%f & 十进制浮点数 \\
+\%e & 以科学记数法输出浮点型数值，用小写e表示指数部分，例如： \verb$2.452e+03$ \\
+\%E & 以科学记数法输出浮点型数值，用大写E表示指数部分，例如： \verb$2.452E+03$ \\
+\%g & 根据数值自动选择\%f或\%e~(指数小于-4或大于精度时使用\%e) \\
+\%G & 根据数值自动选择\%f或\%E~(指数小于-4或大于精度时使用\%E) \\
+\%x & 无符号十六进制数(小写) \\
+\%X & 无符号十六进制数(大写) \\
+\%a & 以格式~\verb$0xh.hhhhp+d$~输出的十六进制数~~ (C99新增)~~  \\
+\%A & 以格式~\verb$0xh.hhhhp+d$~输出的十六进制数~~ (C99新增)~~ \\
+\%o & 无符号八进制数 \\
+\%p & 指针 \\
+\%s & 字符串 \\
+\%n & 将至该符号处已打印的字符数写入相应的整数指针变量中 \\
+\%\% & 输出百分号 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+“\%d”和“\%i”处理有符号整数，两者的作用是完全一样的，由于多种历史原因才导致两
+者同时存在，为了维持与scanf()的等价关系是原因之一。
+
+“\%g”(或“\%G”)可以令printf()自动的在“\%f”和“\%e”(或“\%E”)之间选择适当
+格式，选择的规则是产生最短输出者优先，下面这段程序演示这种自动选择的效果
+(pro-3-2.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    double f;
+  
+    for (f=10.0; f<1.0e+9; f=f*10)
+      printf(" %g;", f);
+    printf("\n");
+
+    return 0;
+  }
+\end{verbatim}
+这段代码的运行结果为：
+\begin{verbatim}
+  10; 100; 1000; 10000; 100000; 1e+06; 1e+07; 1e+08;
+\end{verbatim}
+
+另外，表\ref{table_3_1}中的转换说明符中还有一个比较特殊的就是“\%n”，“\%n”事
+实上并不向printf()传递格式化信息，而是执行另外一种类似计数器的操作，即将该符号之
+前打印的字符的数量放到与其相对应的变量所指向的整型变量中去，这也就意味着与说明符
+“\%n”相对应的变量必须是一个指向整型变量的指针。下面的例子可以帮助我们更好的理
+解这个特殊的说明符(pro-3-3.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int cnt1, cnt2;
+
+    printf("This is%n a testing %npro.\n", &cnt1, &cnt2);
+    printf("Counter1 = %d, Counter2 = %d \n", cnt1, cnt2);
+
+    return 0;
+  }
+\end{verbatim}
+注意两个printf()函数中参数列表是有所不同的，回忆一下前一章学习的\verb=&=运算符的
+作用，\verb=&cnt1=实际上是取变量\verb=cnt1=的地址，也就是一个指向int型变量的指针。
+这种用法在scanf()函数中是很常见的，下一节我们就会了解通过scanf()从控制台读取信
+息的方法，这里我们还是先把printf()的问题说完。
+
+\subsection{格式修饰符}
+为了更精确的控制控制台的输出，控制字符串中还可以使用一些格式修饰符来进一步微调。
+这些格式修饰符主要包括：最小域宽说明符、精度说明符、对齐输出、\#修饰符等。
+
+\subsubsection{最小域宽说明符}
+~~~
+
+转换说明符中百分号和格式码之间的整数是最小域宽说明符，当显示的字符串或者数的宽度
+小于指定宽度时，用空格补充至指定宽度；当显示内容宽度大于指定宽度时，则显示全部内
+容。最小域宽说明符常用于制表，将表中元素按列对齐。如果希望补零而不是补空格，则在
+指定最小域宽度的整数前加0。请参考下面的语句：
+\begin{verbatim}
+  double x = 15.3245;
+  
+  printf("%f;", x);
+  printf("%12f;", x);
+  printf("%012f;\n", x);
+\end{verbatim}
+上面语句的运行结果为：
+\begin{verbatim}
+  15.324500;   15.324500;00015.324500;
+\end{verbatim}
+
+\subsubsection{精度说明符}
+~~~
+
+精度说明符位于最小域宽说明符之后，由一个圆点(.)及其后面的整数构成，精度说明符应
+用于不同转换说明符时的意义是有所不同的\footnote{如果没有指定精度，默认精度为小数
+  点后6位。}，详见表\ref{table_3_2}：
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{精度说明符的不同作用}
+\label{table_3_2}
+\begin{center}
+\begin{tabular}{|l|p{10cm}|}%{c|l}
+\hline
+修饰的转换说明符 & \multicolumn{1}{c|}{精度说明符的作用}  \tabularnewline
+\hline
+\%f、\%e~或~\%E & 确定显示小数点后面的位数，例如：\%10.4f显示的数宽度至少
+是10，其中小数点后占4位 \tabularnewline
+\%g~或~\%G & 指定有效位数 \tabularnewline
+\%s & 限制最大域宽，例如：\%5.8s显示的串最少5个字符，最多8个字符，超长部分将被截
+去 \tabularnewline
+\%d、\%i~或~\%u & 确定显示的最小位数，不足时左侧补0 \tabularnewline
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\noindent{\hei 注意：}
+最小域宽和精度说明符也可以不是常数，通过传入printf()参数动态指定，这是通过占位符
+(*)实现的。printf()函数会按照占位符出现的顺序，用对应位置的变量值填充占位符处的
+未定值。下面的语句中：
+\begin{verbatim}
+  printf("%*.*f\n",10,4,100.97);
+\end{verbatim}
+10和4将分别被填回两个占位符处，上面的语句相当于
+“\verb=printf("%10.4f\n",100.97);=”。
+
+\subsubsection{对齐输出}
+~~~
+
+默认情况下，所有输出都是右对齐的，即如果规定的域宽度大于数据的宽度，数据显示在域
+的右边界上。在转换说明符的百分号(\%)后面直接放一个减号(-)，则可以强制输出左对齐。
+下面的例子展示了默认右对齐和左对齐的不同效果(pro-3-4.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void) 
+  {
+    printf(".........................\n");
+    printf("right justified: %8d\n", 123);
+    printf(".........................\n");
+    printf(" left justified: %-8d\n", 123);
+    printf(".........................\n");
+
+    return 0;
+  }
+\end{verbatim}
+
+\subsubsection{\#修饰符}
+~~~
+
+\#修饰符用于使用转换说明符的可选形式，用于修饰不同的转换说明符产生的效果是不同的，
+其作用见表\ref{table_3_3}：
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{\#修饰符的作用}
+\label{table_3_3}
+\begin{center}
+\begin{tabular}{|l|l|}%{c|l}
+\hline
+修饰的转换说明符 & \multicolumn{1}{c|}{\#修饰符的作用}  \tabularnewline
+\hline
+\%o & 输出以0开始 \tabularnewline
+\%x & 输出以0x开始 \tabularnewline
+\%X & 输出以0X开始 \tabularnewline
+\%g、\%G、\%f~或~\%e & 确保小数点出现，即使无小数位也以.0结尾 \tabularnewline
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsubsection{其他修饰符}
+~~~
+
+除了上述的一些修饰符外，printf()函数还接受短整型、长整型等格式的修饰符，C99标准
+中对这一类的修饰符进行了扩充，这些修饰符及其作用见表\ref{table_3_4}\footnote{另
+  外，还有j、t、z等修饰符，关于这些修饰符的解释可以参阅《C Primer Plus》一
+  书，本书将不再做进一步的说明。}：
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{其他修饰符的作用}
+\label{table_3_4}
+\begin{center}
+\begin{tabular}{|c|p{10.8cm}|}%{c|l}
+\hline
+修饰符 & \multicolumn{1}{c|}{修饰符的作用}  \\
+\hline
+h & \begin{tabular}{p{10.5cm}}修饰\%d、\%i、\%o、\%u、\%x时，表示处理短整数\\ 
+  修饰\%n时，表示相应变量为指向短整型的指针 \end{tabular} \\
+\hline
+hh (C99新增) & \begin{tabular}{p{10.5cm}}修饰\%d、\%i、\%o、\%u、\%x时，表示处理
+  signed char或 unsigned char型值\\ 
+  修饰\%n时，表示相应变量为指向signed char型的指针 \end{tabular} \\
+\hline
+l & \begin{tabular}{p{10.5cm}}修饰\%d、\%i、\%o、\%u、\%x时，表示处理长整数\\
+  修饰\%n时，表示相应变量为指向长整型的指针\\
+  修饰\%e、\%f、\%g时，表示处理long double型值 \end{tabular} \\
+\hline
+L & \begin{tabular}{p{10.5cm}}修饰\%f、\%e时，表示处理long double型
+  值 \end{tabular}\\
+\hline 
+ll (C99新增) & \begin{tabular}{p{10.5cm}}修饰\%d、\%i、\%o、\%u、\%x时，表示处理
+  signed long long int或unsigned long long int型值\\ 
+  修饰\%n时，表示相应变量为指向signed long long int型的指针 \end{tabular} \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+下面一段代码演示了如何使用ll修饰符，其它的修饰符的使用也是类似的：
+\begin{verbatim}
+long long int num1;
+unsigned long long int num2;
+printf("%lld, %llu \n", num1, num2);
+\end{verbatim}
+
+\subsection{打印较长的字符串}
+在本章开始的例子中，也许读者已经注意到了最后三个printf()语句的写法有些怪异，它们
+都没有在一行内写完并且折到了下一行，而换行的方式也都各不相同，这是怎么回事呢？事
+实上，这是三种不同的打印较长字符串的方法。当需要打印的字符串比较长时，为了代码的
+整齐美观，很多程序员会把一个较长的语句分成两行甚至多行，这种情况在打印语句中是很
+常见的。
+
+例子中的三个printf()的语句示例了三种典型的代码折行的方法：
+\begin{enumerate}
+\item 在控制字符串结束后，把参数列表写到下一行，这种写法不用额外的字符，编译器会
+  自动忽略逗号之后的换行和空格，因此一般情况下，为了美观，都把下一行的代码与
+  printf()的左括号对齐，在emacs等编辑器中，按Tab键会自动对代码进行缩进；
+\item 如果控制字符串本身就已经超出了所希望的长度，那么换行就必须在控制字符串内部
+  进行，这时在前一行的最后加一个反斜杠“\verb=\=”即可，但是这是下面一行字符前的
+  空格将不会被忽略，因此这种情况下不应该对下一行代码进行缩进；
+\item 在控制字符串内部换行还有一种办法，就是在折行处的两端分别添加一个双引号，使
+  得控制字符串在每一行内都是一对双引号包括的，就像例子中的最后一个printf()语句那
+  样，这时是可以对折行的代码进行缩进的。
+\end{enumerate}
+
+另外，还有一种方法，就是把一个较长的输出分别写在多个printf()语句中，显然，这是问
+题的一个“平凡解”。
+
+\section{scanf()：格式化输入}
+了解了控制台输出函数printf()之后，让我们转向输入函数scanf()。当然，C语言库
+中不仅仅只有scanf()这一个输入函数，但是scanf()的确是最常用的输出函数，因为它支持
+的格式说明符几乎和printf()一样，可以输入各种形式和类型的数据。
+
+scanf()也使用控制字符串和参数列表，与printf()不同之处在于，scanf()的参数列表指定
+输入将被转换成的格式，而参数列表是指向用来存储输入数据的相应类型的指针
+\footnote{回顾前面对printf()的介绍，printf()的参数列表使用变量名、常量和表达式，
+  这是这两个函数输入参数最大的不同之处。}。关于如何确定scanf()函数的参数类表，有
+下面两个简单有效的规则：
+\begin{itemize}
+\item 如果用来读取某种基本变量类型的值，在变量名之前加一个\verb=&=；
+\item 如果把一个字符串读入一个字符数组中，则不需要使用\verb=&=。
+\end{itemize}
+
+
+有了对printf()的认识，理解scanf()也就容易的多了，在scanf()的控制字符串中也有转换
+说明符来指定读入数据的格式，这些说明符与printf()的基本相同，见表\ref{table_3_5}：
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{scanf()的转换说明符}
+\label{table_3_5}
+\begin{center}
+\begin{tabular}{|c|p{9cm}|}%{c|l}
+\hline
+转换说明符 & \multicolumn{1}{c|}{意~~~~义}  \\
+\hline
+\%c & 读一个字符 \\
+\%d、\%i & 读一个十进制整数 \\
+\%u & 读一个无符号十进制整数 \\
+\%e、\%f、\%g、\%a & 读一个浮点数~~ (\%a为C99新增) \\
+\%E、\%F、\%G、\%A & 读一个浮点数~~ (\%A为C99新增) \\
+\%o & 读一个八进制数 \\
+\%p & 读一个指针(一个地址) \\
+\%x、\%X & 读一个十六进制数 \\
+\%s & 读一个字符串 \\
+\%n & 接收一个由scanf()自动产生的整数，其值等于至此已读入的字符数 \\
+\%[~] & 搜索字符集 \\
+\%\% & 读入一个百分号 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+通过表\ref{table_3_5}可以看出，scanf()的转换说明符除了增加了一个“\%[~]”之外，和
+printf()的是一样的，只不过其意义由规定输出数据的类型变为规定读入数据的类型，
+“\%n”仍然起计数器的作用。下面通过一个例子说明搜索字符集的说明符“\%[~]”的用法
+\footnote{这个例子里用到了字符数组(str1、str2等)，我们将在后面的章节了解到它的意
+  义和用法，在这里，可以简单的把它们理解为存放字符串的变量。}(pro-3-5.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int i;
+    char str1[40], str2[40];
+  
+    printf("Input something here:\n");
+    scanf("%d%[abcdefg]%s", &i, str1, str2);
+    printf("%d %s %s\n", i, str1, str2);
+  
+    return 0;
+  }
+\end{verbatim}
+编译运行这段程序,如果在控制台输入“234abcloongson”，按回车后程序将会显示
+\verb=234 abc loongson=。通过这个例子可以看出说明符“\%[~]”起到字符过滤的作用，
+过滤字符集还可以用一个连续范围表示，比如\verb=\[a-z]=表示只接受小写英文字母，另
+外需要注意的是，在过滤字符集中是区分大小写的。
+
+scanf()读取数据是严格依照控制字符串的格式的，如果控制字符串里在两个输入变量之间
+有一个者逗号，用户输入数据时也必须在两个变量之间输入相应的符号。例如：
+\verb=scanf("%d,%d", &x, &y);=语句正确的输入数据方式是\verb=10,15=，而不是
+\verb=10 15=或者其他格式。另外需要注意的是，scanf()的控制字符串中的空白符代表任
+意数量的空白符，空白符包括空格、制表符、垂直制表符、进纸符、换行符等，换句话讲，
+空白符使scanf()忽略任意数量的空白符，直到遇到一个非空白符为止。
+
+
+\noindent {\hei \textbf{scanf()}的*修饰符}
+
+前面提到printf()函数在指定最小域宽和精度的时候，可以用占位符“*”来根据变量的值
+动态的改变最小域宽和精度。在scanf()中，也有“*”修饰符，但是其意义与printf()的修
+饰符就大不一样了。在scanf()函数中，当把“*”放在\verb=%=和说明符字母之间是，它使
+函数跳过相应的输入项目。例如下面的程序(pro-3-6.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int n;
+
+    printf("Please input 3 numbers:\n");
+    scanf("%*d %*d %d", &n);
+    printf("The last number is: %d\n", n);
+
+    return 0;
+  }
+\end{verbatim}
+如果输入“\verb=1 2 3=”，则运行结果为：
+\begin{verbatim}
+Please input 3 numbers:
+1 2 3
+The last number is: 3
+\end{verbatim}
+当程序需要读取以特定格式排列的数据文件的某一列数据时，这个修饰符就非常有用了。
+
+
+\section{其他输入/输出函数}
+在C语言的输入/输出函数中，除了printf()和scanf()外，还有其他的输入/输出函数，包括
+putchar()、getchar()、puts()、gets()等，这几个函数的功能没有printf()和scanf()那
+么丰富，但是他们在特定的应用场合还是有其独特的作用。
+
+\subsection{putchar()和getchar()}
+putchar()和getchar()是最简单的C语言输入/输出函数，两者的作用分别是输出一个字符和
+读入一个字符，我们还是通过一个简单的例子来说明(pro-3-7.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    char ch; 
+
+    while ((ch = getchar()) != '.')
+      putchar(ch);
+
+    return 0;
+  }
+\end{verbatim}
+上面的程序会允许用户在控制台输入字符并显示该字符，但是程序运行的结果似乎不像我们
+期待的那样，如果我们输入多个字符，程序也会在下一行显示这些字符：
+\begin{verbatim}
+  abcd
+  abcd
+\end{verbatim}
+难道这里char型变量ch里可以存储字符串？当然不是！造成这种情况的原因在于所谓的
+“行缓冲输入”机制，即输入先被暂时放在一个缓冲区，直到键入回车时才返回。在这个例
+子中，while循环一直读取并显示缓冲区中的字符直到遇到“.”为止。
+
+这种输入方式在有些
+时候是不方便的，特别是在游戏等需要实时交互的场合，因此大多数C编译器实现中都提供
+了支持交互的函数，最常见的是getch()和getche()\footnote{有的实现中函数前面带有下
+  划线，比如Microsoft VC++等。}，在Turbo C\footnote{Turbo C是
+  Borland公司出品的dos下的C语言集成开发工具，dos时代曾风靡一时，直到现在很多
+  windows下的C语言初学者因为畏惧VC复杂的界面而选择TC做为语言学习的工具。}或
+Microsoft VC++中，这些函数是在\verb=<=conio.h\verb=>=中定义的。而在gcc中是通过屏
+幕开发库\verb=<=curses.h\verb=>=实现getch()的，由于curses库是为了兼容各种不同的
+终端设备而设计的屏幕开
+发库，所以在使用时一般需要有一些其他的函数配合，编译时要加上“\verb=-lcurses=”
+编译参数，由于getch()不是标准的C库函数，这里就不对其进行详细介绍，需要时只需在
+google以“linux”、“curses”等做为关键词搜索一下，就可以找到很多专门的介绍。
+
+\subsection{puts()和gets()}
+puts()和gets()的作用是输出和读入一个字符串，gets()读入键入的一个字符串，然后把读
+入结果放到指针变量指向的地址。用户键入字符直到回车，gets()读入这一行字符并忽略回
+车符，然后在读入字符串的串尾加一个null终止符。在键入字符串时，用户可以在回车前用
+“BACKSPACE”键修改键入的字符。使用gets()时要特别小心，因为它不对输入的数组进行
+边界检查，当用户键入的字符数多于字符串数组的长度时，有可能产生意想不到的内存错误。
+下面的程序(pro-3-8.c)读入一个字符串，并显示这个字符串的长度，这里用到了strlen()
+函数，它来自\verb=<=string.h\verb=>=头文件：
+\begin{verbatim}
+  #include <stdio.h>
+  #include <string.h>
+
+  int main(void)
+  {
+    char str[80];
+
+    gets(str);
+    puts(str);
+    printf("The length of input string is: %d\n", 
+           strlen(str));
+  
+    return 0;
+  }
+\end{verbatim}
+在编译这段程序时，gcc编译器会给出这样的警告：
+\begin{verbatim}
+  warning: the `gets' function is dangerous and should 
+  not be used.
+\end{verbatim}
+可见gets()并不是一个理想的输入函数，有一些函数可以做为它的代替函数并且具备检测数
+组溢出的功能，比如fgets()，但是需要涉及到输入输出重定向，本书暂不讨论这个话题，
+需要了解的可以参阅相关书籍。
+
+本节介绍的简单控制台输入输出函数总结如表\ref{table_3_6}：
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{简单输入输出函数小结}
+\label{table_3_6}
+\begin{center}
+\begin{tabular}{|c|p{9cm}|}%{c|l}
+\hline
+函~~数 & 作~~~~用  \\
+\hline
+getchar() & 从键盘读入字符，等待回车 \\
+getche() & 读入字符并显示，不等待回车~(非标准库函数) \\
+getch() & 读入字符但不显示，不等待回车~(非标准库函数) \\
+putchar() & 在控制台上显示字符 \\
+gets() & 从键盘读入字符串 \\
+puts() & 在控制台上显示字符串 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\section{小结}
+本章介绍了基本的控制台输入输出函数，这些函数是程序和用户进行交互的基础，特别是
+printf()和scanf()两个函数，在非GUI\footnote{GUI--Graphic User Interface，即图形
+  用户界面，目前图形操作系统中绝大多数应用程序都有自己的图形界面，但是非GUI程序
+  仍然有重要的作用，特别是系统服务、后台程序等。在Unix类系统下，相当
+  多的应用软件都是非GUI核心程序加一个GUI界面构成的，比如后面我们将要了解的
+  GDB等，这种架构既保证了软件核心的稳定性又带来了软件界面的灵活性。}程序中，这是
+两个非常基本的函数。getchar()和putchar()是对单个字符输入输出的函数，但是由于
+getchar()的大多数实现都采用缓冲机制，不能实现实时交互，因此大多数C编译器实现都增
+加了getch()和getche()两个函数实现交互，但是不同编译器的具体实现不同，考虑移植性
+时，应慎重使用这两个函数。gets()和puts()是读入和显示字符串的函数，但是由于gets()
+不检测数组越界，程序运行时有可能出现内存错误，gcc不提倡使用gets()这个函数。
+
+具备了上一章数据类型和本章基本输入输出函数的知识后，应该可以写出简单的顺序结构的
+C程序了，但是解决实际问题时会遇到各种各样的逻辑结构，比如判断、分支、循环等，要
+使程序具备这样的逻辑能力，就需要继续学习下一章的内容：基本程序结构。
+
+
+\section{习题与上机作业}
+
+\subsection{习题}
+\begin{enumerate}
+\item 运行本章开始的程序pro-3-1，在程序要求输入名字时输入名字和姓氏(比如Bill Gates)，
+  看看程序会作何反应？说说这是为什么？和缓冲区有什么关系？有什么办法解决吗？
+\item 请构造一个printf()语句，打印下面内容：
+\begin{verbatim}
+    This is a "Loongson" C program.
+    We use loongson-2E processor at 800MHz.
+     And it's only 80% of its capability!
+\end{verbatim}
+\item 针对下列打印的内容，请给出合适的转换说明：
+  \begin{enumerate}
+  \item 一个字段宽度等于数字位数的十进制数；
+  \item 一个字段宽度为4的十六进制数；
+  \item 一个形如123.456、字段宽度为10的浮点数；
+  \item 一个形如1.22E+012、字段宽度为12的浮点数；
+  \item 一个字段宽度为25、左对齐的字符串。
+  \end{enumerate}
+\item 给出下列每个输入的scanf()语句，并指出用到的变量的类型：
+  \begin{enumerate}
+  \item 112
+  \item 23.56,4.65E-12
+  \item linuxCpro
+  \item good 100
+  \item good 100 (跳过good，只读入100)
+  \end{enumerate}
+\item 谈谈C语言中的空白字符包括那些？有什么作用？
+\item 思考顺序程序结构的局限在哪里，为什么要在程序设计语言里引入复杂的逻辑控制功
+  能？
+\end{enumerate}
+
+\subsection{上机作业}
+\begin{enumerate}
+\item 编写一段程序，分别从控制台读入字符串、整型、浮点型数据，并分别打印在控制台
+  上，对于浮点型数据，分别以十进制和十六进制两种格式打印。
+\item 编写一段程序，分别以十进制、八进制和十六进制显示0到17，并对比三种进制的不
+  同。
+\item 编写一个程序，统计用户的姓名、身高、出生年月以及民族，按照下面格式显示：
+\begin{verbatim}
+    Bill, Han Zu, 170cm, born in 1956.1.1.
+\end{verbatim}
+\item 编译本章的示例程序，任意做一些修改。
+\end{enumerate}
+
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End: 
+
+
+

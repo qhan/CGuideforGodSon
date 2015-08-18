@@ -1,0 +1,436 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: chapter05.tex,v 1.1 2008/05/07 06:59:44 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{使用GDB调试程序}
+通过前面几章的学习，我们已经掌握了基本的C程序设计的要素：数据类型、基本输入输出
+和基本程序结构，后面我们还要学习函数、指针等一些更高级的主题。不过现在，让我们暂
+时休息一下，换一个同样有趣的话题，学习一下如何在linux环境下调试程序。对于程序员
+而言，调试程序的能力与编写程序的能力一样重要，而一个优秀的调试工具是程序员在编程
+实践中不可缺少的好朋友，本章我们就来学习如何使用GDB调试工具。工具的使用固然重要，
+但调试程序的方法和思路却是更有价值的编程素养。
+
+
+\section{GDB简介}
+GDB(the GNU debugger)是GNU组织发布的一个强大的程序调试工具，是linux系统下最流行
+的程序调试工具，同时还支持其它Unix类以及windows操作系统。它是一个字符
+界面的调试工具，所有的交互工作都是通过命令完成的，这与windows平台下常见的VC、BCB
+等IDE中的调试工具相比显得有些原始和复杂，但事实上GDB有着比大多数图形化调试工具更
+为强大的功能。
+
+GDB的在调试过程中主要完成下面几个方面的工作\footnote{这段文字来自GDB的官方网站：
+  sourceware.org/gdb/}：
+\begin{enumerate}
+\item 启用程序，指定影响程序行为的任意因素；
+\item 使程序在满足指定条件的位置(断点)停止，断点也可以是条件表达式；
+\item 程序停止时，检查程序的运行状况；
+\item 动态改变程序的执行，用来试验造成错误的原因。
+\end{enumerate}
+
+GDB可以调试很多种程序语言，包括C、C++、Ada、Object C、Pascal、Fortran等，以及GNU
+所支持的所有微处理器的汇编语言。GDB支持本地调试，也支持远程调试，即通过网络对其
+它计算机上的程序进行调试。
+
+本章我们仍然有一个贯穿前后的示例程序，但这次不是示例C语句，而是以该程序为对象学
+习GDB调试工具的使用。我们的示例程序如下(pro-5-1.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int i;
+    char *ch="This is a testing program for gdb.";
+
+    i=0;
+    while (ch[i] != '\0')
+      {
+        putchar(ch[i]);
+        i++;
+      }
+    ch[i]='!';
+    putchar('\n');
+    for (i=1; i<=11; i++)
+      printf("%X", i);
+    putchar('\n');
+    for (i=1; i<=11; i++)
+      {
+        if (i%3 == 0)
+          putchar('$');
+        else
+          putchar('*');
+      }
+    putchar('\n');
+
+    return 0;
+  }
+\end{verbatim}
+接下来我们编译该程序，需要强调的是，为了对程序进行调试，编译时需要加上“-g”的编
+译选项，作用是把必要的调试信息加入目标文件。我们用下面的命令对pro-5-1.c进行编译：
+\begin{verbatim}
+  gcc -g pro-5-1.c
+\end{verbatim}
+于是我们得到了编译后的执行文件“a.out”\footnote{编译时也可以指定编译目标的文件
+  名，只需把想要的文件名跟在后面，例如：gcc -g pro-5-1.c pro-5-1。}。
+
+%\noindent
+{
+\kai 虽然与本章的主题不太相关，但是下面要介绍的这几个gcc常用编译参数对我们是非常
+有用的：
+\begin{itemize}
+\item -g: 把调试信息加入目标文件；
+\item -Wall: 打开所有类型的语法警告；
+\item -o: 指定输出文件名；
+\item -c: 把.c文件转换为以.o为扩展名的目标文件。
+\end{itemize}
+}
+
+\section{启动GDB与执行程序}
+在控制台输入命令\verb=gdb=就可以启动GDB程序：
+\begin{verbatim}
+  GNU gdb 6.4.90-debian
+  Copyright (C) 2006 Free Software Foundation, Inc.
+  GDB is free software, covered by the GNU General \
+  Public License, and you are
+  welcome to change it and/or distribute copies of \
+  it under certain conditions.
+  Type "show copying" to see the conditions.
+  There is absolutely no warranty for GDB.  Type \
+  "show warranty" for details.
+  This GDB was configured as "mipsel-linux-gnu".
+  (gdb)
+\end{verbatim}
+在(gdb)后面输入命令，就可以使用GDB了。要退出GDB，只需要键入命令q并回车。
+
+用GDB载入待调试程序有两种方法，一是直接在运行“gdb”命令后加上执行程序的名字，例
+如\verb=gdb a.out=；另一种方法是在启动GDB后，用file命令载入待调试程序，例如
+\verb=(gdb)file a.out=。
+
+在GDB中使用run命令来执行载入的程序，如果程序需要输入参数，只需在run后输入相应的
+参数。例如：
+\begin{verbatim}
+(gdb) run
+Starting program: /home/a/s/nebula/program/samples/chap\
+05/a.out
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00400738 in main () at pro-5-1.c:14
+14        ch[i]='!';
+(gdb)
+\end{verbatim}
+糟糕，程序出错了！GDB提示段错误：Segmentation fault。这种错误往往是对内存的不当
+操作造成的，但是到底是哪一个操作造成的这个错误？下面我们就使用GDB调试工具来找
+出错误并修复bug。
+
+\section{查看源代码}
+其实在运行出错时GDB已经给出了错误在源代码中的位置了，是第14行\verb!ch[i]='i'!，
+那这一行前后都是哪些代码？我们可以用list命令查看这一行前后的代码：
+\begin{verbatim}
+(gdb) list
+9         while (ch[i] != '\0')
+10          {
+11            putchar(ch[i]);
+12            i++;
+13          }
+14        ch[i]='!';
+15        putchar('\n');
+16        for (i=1; i<=11; i++)
+17          printf("%X", i);
+18        putchar('\n');
+(gdb)
+\end{verbatim}
+程序原来是要对ch字符串的某一个字符重新复制，这一句出现了错误，很可能是i超出了字
+符串ch的范围，那么到底是不是这个原因呢？我们可以通过查看变量的值加以验证。
+
+\section{查看变量与堆栈}
+在GDB中，查看变量使用print命令，后面跟要查看的变量名即可，例如：
+\begin{verbatim}
+(gdb) print i
+$1 = 34
+(gdb) print ch
+$2 = 0x400b00 "This is a testing program for gdb."
+\end{verbatim}
+通过print命令可以看到，在程序出错的位置，i的值为34，字符串ch包含的字符数也是34，
+但是别忘了C语言中计数一般都是从0开始的，因此\verb=ch[34]=实际上是要访问字符串ch
+的第35个字符，看来，错误很有可能是出在这里。
+
+对于结构比较复杂的程序，当程序被停住时，需要做的第一件事就是查看程序是在哪里停住
+的。当程序调用了一个函数，函数的地址，函数参数，函数内的局部变量都会被压入“栈”
+（Stack）中。我们可以用backtrace命令来查看当前的栈中的信息：
+\begin{verbatim}
+(gdb) backtrace
+#0  0x00400738 in main () at pro-5-1.c:14
+(gdb)
+\end{verbatim}
+在我们的示例中，由于程序结构比较简单，所以堆栈中只有一个函数，而对于复杂的程序，
+就可以从中得到更多的关于错误定位信息。
+
+
+\section{设置断点与变量监视}
+GDB中有很多关于断点的命令，可以通过help breakpoint命令获得相关的信息：
+\begin{verbatim}
+(gdb) help breakpoint
+Making program stop at certain points.
+
+List of commands:
+
+awatch -- Set a watchpoint for an expression
+break -- Set breakpoint at specified line or function
+catch -- Set catchpoints to catch events
+clear -- Clear breakpoint at specified line or function
+commands -- Set commands to be executed when a \
+breakpoint is hit
+condition -- Specify breakpoint number N to break only \
+if COND is true
+delete -- Delete some breakpoints or auto-display \
+expressions
+disable -- Disable some breakpoints
+enable -- Enable some breakpoints
+hbreak -- Set a hardware assisted  breakpoint
+ignore -- Set ignore-count of breakpoint number N to \
+COUNT
+rbreak -- Set a breakpoint for all functions matching \
+REGEXP
+rwatch -- Set a read watchpoint for an expression
+tbreak -- Set a temporary breakpoint
+tcatch -- Set temporary catchpoints to catch events
+thbreak -- Set a temporary hardware assisted breakpoint
+watch -- Set a watchpoint for an expression
+
+Type "help" followed by command name for full \
+documentation.
+---Type <return> to continue, or q <return> to quit---
+\end{verbatim}
+
+我们首先用“break 12”命令在12行设置一个断点，break命令的用法是在后面加要设置断
+点的行号。
+\begin{verbatim}
+(gdb) break 12
+Breakpoint 1 at 0x4006e4: file pro-5-1.c, line 12.
+(gdb)
+\end{verbatim}
+再次运行程序，GDB会提醒调试的程序已经在运行了，是否重新从头运行？回答y。程序会再
+次从头运行到12行。cont命令是程序继续运行，直接按回车则再次键执行最近的一个命令。
+\begin{verbatim}
+(gdb) run
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /home/a/s/nebula/program/samples/chap0\
+5/a.out
+
+Breakpoint 1, main () at pro-5-1.c:12
+12            i++;
+(gdb) cont
+Continuing.
+
+Breakpoint 1, main () at pro-5-1.c:12
+12            i++;
+(gdb)
+Continuing.
+
+Breakpoint 1, main () at pro-5-1.c:12
+12            i++;
+(gdb)
+\end{verbatim}
+在这个过程中我们也可以随时通过“print i”来查看变量i的值，但是这个循环要进行34次，
+一直这样监视下去，似乎效率很低。我们可以通过设置观察点的方法简化这一工作，通过
+“help breakpoint”给出的信息，我们使用“watch”命令增加对i的观察点，于是每次回
+车便分别显示i的变化和断点：
+\begin{verbatim}
+(gdb) watch i
+Watchpoint 2: i
+(gdb) cont
+Continuing.
+Watchpoint 2: i
+
+Old value = 3
+New value = 4
+main () at pro-5-1.c:9
+9         while (ch[i] != '\0')
+(gdb)
+Continuing.
+
+Breakpoint 1, main () at pro-5-1.c:12
+12            i++;
+(gdb)
+\end{verbatim}
+其实，在这种情况下只要对i的观察点就够了，不必有12行处的断点。这时，可以用delete
+命令删除不需要的断点。我们现用“info break”命令查看所有的断点信息，然后删掉不需
+要的断点：
+\begin{verbatim}
+(gdb) info break
+Num Type           Disp Enb Address    What
+1   breakpoint     keep y   0x004006e4 in main at pro-\
+5-1.c:12
+        breakpoint already hit 6 times
+2   watchpoint     keep y              i
+        breakpoint already hit 2 times
+(gdb) delete 1
+(gdb)
+\end{verbatim}
+接下来就可以通过cont和回车键观察变量i的变化了。
+
+如果想更细致的观察程序每一句代码执行的情况，可以使用单步执行的命令step和next，这
+两个命令的区别在于：如果有函数调用，step命令会进入函数内部继续单步执行，而next命
+令则把该函数当做一条语句去执行，不进入函数内部。这两个命令后面都可以跟一个数字表
+示一次执行的语句条数。下面的例子是我们在第一行设置了断点然后利用step命令单步执行
+的结果：
+\begin{verbatim}
+(gdb) break 1
+Breakpoint 3 at 0x400670: file pro-5-1.c, line 1.
+(gdb) run
+Starting program: /home/a/s/nebula/program/samples/chap\
+05/a.out
+
+Breakpoint 3, main () at pro-5-1.c:4
+4       {
+(gdb) step
+6         char *ch="This is a testing program for gdb.";
+(gdb)
+8         i=0;
+(gdb)
+9         while (ch[i] != '\0')
+(gdb)
+11            putchar(ch[i]);
+(gdb)
+12            i++;
+(gdb)
+\end{verbatim}
+
+\section{在调试器中打补丁}
+GDB装载了被调试程序，当程序运行起来后，可以动态地在GDB中更改当前被调试程序的运行
+线路或是其变量的值，这个功能能够让我们更好的调试程序。
+
+\subsection{修改变量值}
+修改被调试程序运行时的变量值，在GDB中很容易实现，使用GDB的print命令即可完成。如：
+\begin{verbatim}
+(gdb) print i=33
+\end{verbatim}
+
+\subsection{跳转执行}
+GDB提供了乱序执行的功能，也就是说，GDB可以修改程序的执行顺序，可以让程序执行随意
+跳跃。这个功能可以由GDB的jump命令来完：
+\begin{verbatim}
+(gdb) run
+Starting program: /home/a/s/nebula/program/samples/chap0\
+5/a.out
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000000000400532 in main () at pro-5-1.c:14
+14        ch[i]='!';
+(gdb) jump 15
+Continuing at 0x400535.
+This is a testing program for gdb.
+123456789AB
+**$**$**$**
+
+Program exited normally.
+(gdb)
+\end{verbatim}
+jump命令后面紧跟着下一条语句的运行点，可以是文件的行号，也可以是file:line格式，
+还可以是+num这种偏移量格式，甚至是代码行的内存地址。
+
+\subsection{产生信号量}
+使用singal命令，可以产生一个信号量给被调试的程序，如：中断信号Ctrl+C。这非常方便
+于程序的调试，可以在程序运行的任意位置设置断点，并在该断点用GDB产生一个信号量，
+这种精确地在某处产生信号非常有利程序的调试。
+
+singal命令的语法是：\verb=signal <singal>=，UNIX的系统信号量通常从1到15。所以
+\verb=<singal>=取值也在这个范围。
+single命令和shell的kill命令不同，系统的kill命令发信号给被调试程序时，是由GDB截获
+的，而single命令所发出一信号则是直接发给被调试程序的。
+
+\subsection{强制函数返回}
+如果调试断点在某个函数中，并还有语句没有执行完，可以使用return命令强制函数忽略还
+没有执行的语句并返回。return命令的语法是：\verb=return <expression>=。
+使用return命令取消当前函数的执行，并立即返回，如果指定了\verb=<expression>=，那么该表达
+式的值会被认作函数的返回值。
+
+\subsection{强制调用函数}
+在GDB中，可以通过print后面紧跟表达式来调用函数，比如本章的例子中，程序在错误处停
+止，我们可以调用strlen()函数检查ch字符串的长度：
+\begin{verbatim}
+(gdb) run
+Starting program: /home/a/s/nebula/program/samples/chap\
+05/a.out
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000000000400532 in main () at pro-5-1.c:14
+14        ch[i]='!';
+(gdb) print strlen(ch)
+$1 = 34
+\end{verbatim}
+另外，\verb=call <expr>=也可以实现强制调用函数。print和call的不同是，如果函数返
+回void，call则不显示，print则显示函数返回值，并把该值存入历史数据中。
+
+\section{小结}
+GDB的功能非常强大，远远不止本章所展示的这些内容。但是做为使用GDB进行程序开发的程
+序员，并不需要一下子把GDB所有的功能都掌握，最常使用到的功能其实并不多也不复杂，
+通过实际的操作很快就能掌握使用GDB调试程序的技巧。 本书的目的并不在于深入探讨GDB
+本身，因此对其介绍也并不深入，随着大家编程实践的增多和经验的积累，对于GDB的理解
+和掌握自然会随之加深。关于GDB更多的资料，可以参考GDB本身的help命令和GDB的官方文
+档(http://sourceware.org/gdb/documentation/)。
+
+\section{习题与上机作业}
+
+\subsection{习题}
+\begin{enumerate}
+\item 说说调试工具在程序开发中的作用，你对调试工具有哪些需求？
+\item 比较GDB调试工具和VC中的调试工具，找出其共同的功能，并比较各自的优缺点。
+\item 在google中用关键字“用GDB调试程序”搜索陈皓写的一篇GDB
+  的文档，阅读之后谈谈GDB还有哪些功能？
+\end{enumerate}
+
+\subsection{上机作业}
+\begin{enumerate}
+\item 使用本章所学的调试命令和方法，找出本章示例程序的错误并改正。
+\item 用GDB调试下面的程序，看看是否有错误，找出可能错误并改正：
+\begin{verbatim}
+#include <stdio.h>
+
+int main(void)
+{
+  int i, j, list(10);
+
+  for (i = 1, i<=10, i++)
+  {
+    list[i]=2*i+3;
+    for (j=1, j>=i, j--)
+      printf("%d ", list[j]);
+    printf("\n");
+  }
+}
+\end{verbatim}
+\item 用GDB调试下面的程序，看看是否有错误，找出可能错误并改正：
+\begin{verbatim}
+#include <stdio.h>
+
+int main(void)
+{
+  char ch;
+  int lc = 0;
+  int uc = 0;
+  int oc = 0;
+
+  while ((ch = getchar()) != '#')
+  {
+    if ('a' <= ch >= 'z')
+      lc++;
+    else if (! (ch < 'A') || !(ch > 'Z'))
+      uc++;
+    oc++;
+  }
+  printf("%d lowercase, %d uppercase, %d other\n",
+         lc, uc, oc);
+
+  return 0;
+}
+\end{verbatim}
+\end{enumerate}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End:

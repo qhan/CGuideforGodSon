@@ -1,0 +1,745 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: chapter07.tex,v 1.1 2008/05/07 06:59:44 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{数组与指针}\label{chap_06}
+数组是若干同类变量的集合，可以用同一个变量名通过下标引用其中的变量。C语言中数组
+都是由连续的内存区域构成的，最低地址对应数组首元素，最高地址对应末元素。数组可以
+是一维的也可以是多维的，常用的字符串就是一种以空字符结尾的一维数组。
+
+指针是C语言最强的特性之一，同时也是最危险的特性之一。指针带来高效和灵活的同时，
+也为引入危险的错误留下了空间。数组和指针有着密切的关系，谈论数组往往离不开指针。
+本章我们就从一维数组开始，逐步认识指针的本质、通过指针理解多维数组，以及动态分
+配数组和函数指针。
+
+\section{数组的定义与引用}
+数组与其它变量一样，必须直接声明类型，以便编译器为其分配内存。不同的是，数组的声
+明还需要指明数组中元素的数量。我们先来了解最简单的一维数组。
+
+\subsection{一维数组}
+一维数组定义的一般形式是：
+\begin{verbatim}
+  type var_name[size];
+\end{verbatim}
+这里，\verb=type=定义数组的基本类型，也就是数组元素的类型，\verb=size=定义了数组
+中元素的数量。例如定义一个有80个整型变量的数组就可以用下面的语句：
+\begin{verbatim}
+  int array[80];
+\end{verbatim}
+
+数组可以在声明的时候对其进行初始化，表达式的右侧是用大括号包括、用逗号分割数组的
+元素，例如： 
+\begin{verbatim}
+  int array[10] = {1,2,3,4,5,6,7,8,9,10};
+\end{verbatim}
+数组初始化时不必指定所有的元素，可以只给定前若干个元素的值，程序会自动把后面余下
+的元素赋为零值。例如下面的例子中，我们只给出了前3位的元素值：
+\begin{verbatim}
+  int array[10] = {1,5,6};
+\end{verbatim}
+在C99标准中增加了一种新的特性，支持指定初始化项目，也就是说可以直接指定数组中间
+的某一位元素的值，而不必指定前面的若干位元素。例如我们想指定\verb=array[10]=的第
+7个元素值，如果用传统的方法，至少要这样定义：
+\begin{verbatim}
+  int array[10] = {0,0,0,0,0,0,7};
+\end{verbatim}
+而C99的新特性允许这样定义：
+\begin{verbatim}
+  int array[10] = {[6] = 7};
+\end{verbatim}
+
+要访问数组中的元素，可以通过数组的下标指定。注意C语言中数组的定义和引用都用方括
+号\verb=[ ]=来指定元素个数和位置。例如我们要访问\verb=array=数组中的第15的元素：
+\begin{verbatim}
+  array[14] = 10;
+\end{verbatim}
+注意这里方括号内的下标不是15而是14，这是因为C语言中数组的下标都是从0开始计算的。
+这可能不如其它的编程语言容易接受，但是如果把下标看作地址的偏移量，就很容易理解这
+种计算方法了（可以参照下节中关于指针的介绍）。下面是一个使用数组的例子
+（pro-7-1.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int array[80];
+    int i;
+
+    for (i = 0; i < 80; i++)
+      array[i] = i + 1;
+    for (i = 0; i < 80; i++)
+      printf("%d ", array[i]);
+    putchar('\n');
+  
+    return 0;  
+  }
+\end{verbatim}
+
+
+\subsection{字符串}
+字符串，或者叫字符串数组是最常用的一维数组。字符串事实上是一个一维字符型数组，以
+null字符（空字符）结尾，这是C语言中唯一的字符串类型。因此在定义字符串数组时，数
+组长度必须比最大字符数多1。例如要声明有10个字符的字符串，应该这样声明：
+\begin{verbatim}
+  char str[11];
+\end{verbatim}
+
+用一对双引号括起来的一系列字符称为字符串常量，也会生成以空字符结尾的字符串。例如
+：\verb="Hello world!"=，串尾部的空字符将由程序自动加上。这里需要强调的是双引号
+和单引号的区别，双引号是用来表示一个串常量的，而单引号是用来表示一个字符的，在编
+程中要注意二者的区别（请参考习题\ref{xiti_1}）。
+
+
+C语言中有一些处理字符串的函数，他们被包含在标准头文件\verb=<string.h>=中，下面的
+表格（表\ref{table_7_1}）列出了这些函数的名字和功能\footnote{strcmp函数中，字符
+  串的比较实际上是从第一个字符开始依次比较字符的ASCII码的大小，如果相等则比较下
+  一个，如果不相等则返回结果。} ：
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{一些字符串处理函数}
+\label{table_7_1}
+\begin{center}
+\begin{tabular}{|c|p{9cm}|}%{c|l}
+\hline
+函数名 & \multicolumn{1}{c|}{作~~~~用}  \\
+\hline
+strcpy(\textit{s1}, \textit{s2}) & 将\textit{s2}拷贝到\textit{s1} \\
+strcat(\textit{s1}, \textit{s2}) & 将\textit{s2}链接到\textit{s1}末尾 \\
+strlen(\textit{s1}) & 计算\textit{s1}的长度 \\
+strcmp(\textit{s1}, \textit{s2}) & 比较\textit{s1}和\textit{s2}的大小，如果相等
+则返回零，如果 $s1 > s2$则返回大于零值，如果$s1<s2$则返回小于零值\\
+strchr(\textit{s1}, \textit{ch}) & 返回一个指针，指向\textit{ch}第一次出现在
+                                   \textit{s1}中的位置，\textit{ch}是一个字符 \\
+strstr(\textit{s1}, \textit{s2}) & 返回一个指针，指向\textit{s2}第一次出现在
+                                   \textit{s1}中的位置，\textit{s2}是一个字符串 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\section{地址结构与指针}
+指针是存放内存地址的变量，地址一般指另一个变量的位置。如果一个变量的内容是第二个
+变量的地址，则称第一个变量指向第二个变量。例如图\ref{fig_7_1}中所示，内存地址为
+1000的变量的值是一个内存地址1003，而在1003处的变量的值是一个字符\verb='a'=，我们
+称1000处的变量是一个指向字符变量的指针，或称为字符型指针。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=2in]{./figures/chap07/fig-7-1}
+\caption{地址结构示意} 
+\label{fig_7_1}
+\end{figure}
+
+%\subsection{指针变量}
+指针也必须首先声明，定义指针的一般形式为：
+\begin{verbatim}
+  type * name;
+\end{verbatim}
+其中\verb=type=是指针的基类型，可以是任何有效的C数据类型，\verb=name=是指针变量
+的名字。与普通变量定义相比，指针变量定义最明显的特征是有一个*操作符。技术上将，
+指针可以指向内存的任何位置，无论它是何种类型的指针。但实际上，指针的操作都是基于
+基类型的，因此不同类型的指针在行为上中还是会有差别的，另一方面，如果指针的基类型
+与所指向的类型不一致，会导致程序错误，因此在定义一个指针时，必须确保它的类型与要
+指向的对象类型兼容。
+
+C语言中有两个与指针有关的操作符$\ast$和$\&$，在第\ref{chap_2}章中我们已经介绍过
+这两个操作符。$\&$的作用是返回操作数的地址，而$\ast$则返回操作数所指的变量的值，
+更加简洁的说法是$\&$的作用是“求地址”，$\ast$的作用是“求值”。
+
+\subsection{指针表达式}
+一般的，有指针参与的表达式符合C语言中其它表达式的规则，不过有一些需要注意的地方，
+我们在此强调一下。
+
+\subsubsection{指针赋值}
+~~
+
+指针的赋值表达式两侧的指针类型应该是一致的，比如下面的例子（pro-7-2.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int x = 10;
+    int *p1, *p2;
+
+    p1 = &x;
+    p2 = p1;
+  
+    printf("Values at p1 and p2 is %d, %d\n", *p1, *p2);
+    printf("Addresses pointed by p1 and p2 is "
+           "%p %p\n", p1, p2);
+
+    return 0;
+  } 
+\end{verbatim}
+如果赋值表达式两侧的指针类型不一致，就要进行指针转换。
+
+在C语言中，可以将\verb=void *=指针赋值给任何类型的指针，也可以将任何类型的指针赋
+值给\verb=void *=指针，这种情况下是不需要指针转换的\footnote{在C++中，所有不使用
+  明确的强制类型转换的指针转换都是非法的，包括void *指针转换。}。而其它任何不同
+类型指针之间的
+赋值都需要明确的强制类型转换。但是这种转换一定要非常慎重，因为不同类型的指针转换
+可能产生不确定的程序行为。来看下面的例子：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    double x = 3.1415926, y;
+    int *p;
+
+    p = (int *)&x;
+    y = *p;
+
+    printf("x = %f, y = %f\n", x, y);
+  
+    return 0;
+  }
+\end{verbatim}
+我们的意图是让指针p指向x，然后再通过p把x的值赋给y，但是程序运行的结果却是：
+\begin{verbatim}
+  x = 3.141593, y = 1293080650.000000
+\end{verbatim}
+事实上，由于把x的地址强制转化成了int型的指针，再通过p访问x时，只能访问int型对应
+的字节数（如4字节），而不是x、y的double型的字节数（如8字节）了。因此，在使用指针
+赋值表达式的时候，应该记住的规则是：指针操作是相对指针的基类型而执行的。
+
+\subsubsection{指针算术运算}
+~~
+
+用于指针的算术运算只有整数的加法和减法，包括他们的特例增量和减量操作，以及指针之
+间的减法。指针操作是相对指
+针的基类型的，指针增减的单位是所指类型的长度（字节数），例如指针增量（如p++）后
+指向下一个与指针基类型相同的元素，指针减量（p--）后指向上一个与指针基类型相同的
+元素。指针的加、减法也是同样的，例如：
+\begin{verbatim}
+  p = p + 10;
+\end{verbatim}
+表示是指针p指向当前位置后的第10个元素。
+
+两个指针的相减得到的是一个整数，这个整数表示两个指针以基类型长度为单位的差值。例
+如\verb!p1 - p2 = 10!，如果\verb=p1=、\verb=p2=是int型指针，则表示两个指针所指对
+象在内存中相距10个int型的长度，而不是10个字节。
+
+另外，还可以用关系运算符对两个指针进行比较，比较的不是指针所指的对象的大小而是指
+针本身的大小，也就是地址的大小（参考上机作业\ref{shangji_1}）。
+
+\subsection{指针与数组}
+指针和数组的关系非常密切，由于指针操作也是基于其基类型的，因此指针能够方便高效的
+处理数组。事实上，C语言中访问数组的方法
+有两种：指针算术和数组下标，指针算术的速度甚至可以高于数组下标。来看下面的例子，
+这是实现打印字符串的两种方式：
+\begin{verbatim}
+  void putstri{char *s}
+  {
+    int i;
+
+    for (i = 0; s[i]; i++)
+      putchar(s[i]);
+  }
+
+  void putstrp(char *s)
+  {
+    while(*s)
+      putchar(*s++);
+  }
+\end{verbatim}
+前者putstri()函数是用数组下标实现对数组的访问，而putstrp()则是用指针算术实现对数
+组的访问，而后者是用C语言编写这类子程序的一般方法。
+
+\subsection{指针数组}
+与其它普通数据类型一样，指针也可以用来构造数组，即元素是指针的数组。例如我们定义
+一个含有10个int型指针的数组：
+\begin{verbatim}
+  int *pa[10];
+\end{verbatim}
+其元素\verb=pa[i]=都是整型指针，因此给其赋值时表达式的右值应该是一个指针，例如：
+\verb!pa[2] = &x;!。
+
+指针数组常用来放置指向字符串的指针，这种数组常用来存储提示信
+息，可以根据信息编码给出提示信息的字符串，例如：
+\begin{verbatim}
+  char *mesg[] = {
+    "message 1.\n",
+    "message 2.\n",
+    "message 3.\n",
+    "message 4.\n"
+  }
+
+  printf("%s", mesg[3]);
+\end{verbatim}
+
+
+\section{多维数组与变长数组}
+
+\subsection{二维数组}
+C语言支持多维数组，最简单的多维数组是二维数组，二维数组就是由一维数组构成的数组。
+二维数组的定义形式为：
+\begin{verbatim}
+  type name[size1][size2];
+\end{verbatim}
+其中\verb=size1=、\verb=size2=分别定义两个维数的大小。对二维数组的访问与一维数组
+类似，通过方括号内的下标指定访问的元素，例如\verb=array[1][3]=。二维数组也可以在
+声明时初始化，如下面的程序（pro-7-4.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int array[3][4] = {{1,2,3,4},{5,6,7,8},{9,10,11,12}};
+    int i,j;
+   
+    for (i = 0; i < 3; i++)
+      {
+        for (j = 0; j < 4; j++)
+          printf("%3d ", array[i][j]);
+        putchar('\n');
+      }
+
+    return 0;
+  }
+\end{verbatim}
+如果把二维数组理解为一维数组的数组，二维数组的定义和引用就比较容易理解了。例如
+上面
+的例子中，array是一个$3\times4$的二维数组，也就是说由3个元素个数为4的一维数组构成
+的数组，因此在定义的时候，对每一个一维数组分别定义，用大括号包含，用逗号分隔，这
+与一维数组初始化的思想是一致的。回顾一维数组的初始化方法，如果只定义前两个一维数
+组会怎么样呢？（参考上机作业\ref{shangji_2}）
+
+前面示例中二维数组初始化的方法是所谓的子集分组的方法，其实也可以不用分组而直接依
+次写出数组元素的值，例如：
+\begin{verbatim}
+  int array[3][4] = {1,2,3,4,5,6,7,8,9,10,11,12};
+\end{verbatim}
+我们推荐使用子集分组的方法，因为这样的初始化方法比较直观，并且不容易出错（事实
+上，不分组的方法用gcc编译是会收到警告信息）。
+
+
+字符串数组是一种常用的二维数组，数组的第一维规定字符串的数量，二维规定字符串长度
+的最大值。例如：\verb!char strarry[10][80];!定义了一个包含10个字符串，字符串长度
+最大为80的字符串数组。而访问字符串的时候，只需要说明第一维的下标，比如下面的一段
+程序（pro-7-5.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int t,i,j;
+    char strarry[30][80];
+
+    printf("Please enter your words, end with an "
+	   "enpty line.:\n");
+
+    for (t = 0; t < 30; t++)
+      {
+        printf("%d:", t);
+        gets(strarry[t]);
+        if (!*strarry[t])
+          break;
+      }
+    for (i = 0; i < t; i++)
+      {
+        for (j = 0; strarry[i][j]; j++)
+          putchar(strarry[i][j]);
+        putchar('\n');
+      }
+
+    return 0;
+  }
+\end{verbatim}
+这段程序实现了一个最简单文本编辑器的基本功能，它允许用户输入若干行的字符，然后在
+控制台上显示这些输入的内容。在第一个for循环中接受用户输入的时候，用第一维的下
+标实现对字符串的访问，同样道理，第一个putchar语句也可以换成
+\verb=printf("%s", strarry[i]);=。
+
+回顾数组与指针的关系，再比较一下字符串数组和指
+向字符串的指针数组，我们可以发现字符串数组和字符串指针数组的关系几乎是数组和指针
+的关系由一维到二维的平移，如果我们把一个字符串看作一个数据单元，字符串数组就可以
+看作这种特殊数据的一维数组，而字符串指针数组则是一组指向这种特殊数据的指针。这样
+的观点也许可以有助于对它们的理解和正确使用。当然，
+字符串数组和字符串指针数组还是有区别的，字符串数组的每一个字符串不论字符多少，都
+占用同样数量的内存单元，而字符串指针数组的每一个字符串可以是不一样长的。
+
+\subsection{多维数组}
+C语言中允许大于二维的数组，数组维数的上限只受编译程序的限制。一般定义多维数组的
+方式为：
+\begin{verbatim}
+ type name[size_1][size_2]...[size_k]
+\end{verbatim}
+多维数组所需内存的大小与维数是指数关系，因此过多的维数会造成内存的大量占用，并且
+多维数组用来计算各维下标会占用处理器时间，因此多维数组的存取会比一维数组慢。所以
+在实际应用中，多于三维的多维数组并不常见，很多时候，C程序员宁可用通过一维数组构
+造多维数组，比如在C语言编写的图像处理程序中，这是一个很常见的技巧。
+
+\subsection{变长数组}
+C99标准以前C语言是不支持变长数组的，也就是说数组的长度必须在编译时就确定，而不能
+在运行时指定。C99中增加了一个新功能：可变长度数组，变长数组可以用任何有效的表达
+式来指定其长度。但是变长数组必须是本地数组，即在块域和原型域内的数组。下面是变长
+数组的例子：
+\begin{verbatim}
+  void vafunc(int d)
+  {
+    char str[d];
+    ... ...
+  }
+\end{verbatim}
+\verb=str=就是一个变长数组，它的长度是由变量\verb=d=确定的，而\verb=d=取决于调用
+函数时传递的参数。但是，变长数组的长度在它的生命期内是不变的，这一点很重要，变长
+数组的可变仅在于定义时，而不是运行时，一旦声明，变长数组的长度就固定了。
+
+\subsection{动态分配数组}
+在C99支持变长数组之前，C程序员是如何处理只有在运行时才知道长度的数组呢？聪明的C
+程序员当然有办法，就是使用动态分配函数实现动态分配数组。动态分配是程序在运行中取
+得内存的方法，动态分配函数能实现的功能远不止动态数组，很多动态数据结构如链表、二
+叉树等都需要在运行时需要内容可变的内存。 
+
+C语言动态分配系统的核心由malloc()和free()两个函数组成\footnote{还有其他几个动态
+  分配函数如calloc()、realloc()等，但相比之下都不如malloc()和free()重要。}，
+malloc()分配内存，free()则负责释放内存，这两个函数协同工作，就可以从堆（系统的自
+由内存区）中取得内存。动态分配系统的几个函数都在头文件$<$stdlib.h$>$中定义，
+malloc()和free()函数的原型分别是：
+\begin{verbatim}
+  void * malloc(size_t number_of_bytes);
+  void free(void *p);
+\end{verbatim}
+其中\verb=number_of_bytes=是申请的字节数，它的类型\verb=size_t=是stdlib.h中定义
+的类型，一般是unsigned int型，malloc()的返回值是void型指针，可以赋给任何类型的指
+针。调用malloc()成功后返回的指针指向堆中分配得到的内存的第一字节，调用失败时则返
+回null。free()是malloc()的逆函数，用来释放其分配的内存，使用free()函数需要特别注
+意的是绝对不要用无效指针，否则将破坏自由表。
+例如，下面的代码分配50个int型值的空间（pro-7-6.c）：
+\begin{verbatim}
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  int main(void)
+  {
+    const int num = 50;
+    int *p;
+    int i;
+
+    p = malloc(num * sizeof(int));
+    if (!p)
+      {
+        printf("Allocating error!\n");
+        exit(1);
+      }
+    for (i = 0; i < num; i++)
+      p[i] = i + 1;
+    for (i = 0; i < num; i++)
+      printf("%d ",p[i]);
+    putchar('\n');
+
+    return 0;
+  }
+\end{verbatim}
+其中的if语句用来判断内存分配是否成功，如果内存不足或其他原因导致分配失败，应该及
+时处理这个异常。
+
+
+\section{向函数传递数组}
+了解了指针和数组之后，让我们先回到第\ref{chap_6}章的话题，看看如何向函数传递数组。
+
+如我们所提到的，向函数传递一维数组实际上是一种地址传递，只需告诉函数数组名或者指
+向数组的指针，例如向函数传递一个字符串输入：
+\begin{verbatim}
+  #include <stdio.h>
+
+  void strproc(char * str);
+
+  int main(void)
+  {
+    char s[80];
+    ... ...
+    strproc(s);
+    ... ...
+  }
+\end{verbatim}
+如果向函数传递一个数值型数组，则应改在函数声明中指出形参是一个数组或者指针，如果
+声明为数组，可以不必指定其长度，例如：
+\begin{verbatim}
+  #include <stdio.h>
+
+  void numproc(int num[]);
+
+  int main(void)
+  {
+    int n[10];
+    ... ...
+    strproc(n);
+    ... ...
+  }
+\end{verbatim}
+
+
+向函数传递二维数组时，只传递了指向数组第一元素的指针，这和传递一维数组是一样的，
+但是接收二位数组的函数需要至少声明第二维的长度，例如接收一个$10\times10$二维数组
+的函数应该这样定义：
+\begin{verbatim}
+  void func(int array[][10])
+  {
+    ... ...
+  }
+\end{verbatim}
+因为编译器必须了解第二维的准确长度，否则无法正确对数组下标进行操作。
+
+更高维的数组也和二位数组一样，要在函数定义中说明除第一维之外所有维的大小，例如如
+果我们要传递\verb=int x[3][4][5]=，那么接收函数的形式应该是：
+\begin{verbatim}
+  void func(int array[][4][5])
+  {
+    ... ...
+  }
+\end{verbatim}
+
+至于向函数传递指针数组，也是使用类似的办法，用不带下标的数组名调用即可。例如下面
+的程序（pro-7-7.c）： 
+\begin{verbatim}
+  #include <stdio.h>
+
+  void disparray(char *array[]);
+
+  int main(void)
+  {
+    char *x[] = {
+      "Hello world!",
+      "This is a C program.",
+      "I love C!",
+      "I love Godson!",
+      "I love linux!"
+    };
+
+    disparray(x);
+
+    return 0;
+  }
+
+  void disparray(char *array[])
+  {
+    int i, j;
+
+    i = 0;
+    while (*array[i])
+      {
+        printf("%s \n", array[i]);
+        j = 0;
+        while (array[i][j])
+        {
+          printf("%c* ", array[i][j]);
+          j++;
+        }
+        putchar('\n');
+        i++;
+      }
+  }
+\end{verbatim}
+这个例子中，我们要向函数disparray()传递一个字符串指针数组，事实上传递到
+disparray()函数内部的
+只是这个字符串指针数组的首地址，因为在函数声明中定义了array的类型，所以编译器知
+道如何处理这个指针。第一层while判断的是指针指向的字符串是否为空，而第二层while判
+断的是某个字符串的字符是否为空。
+
+\section{函数指针}
+函数指针是C语言中比较难理解但又非常强大的特性。首先来回顾一下指针和函数的实质，
+指针是指向内存地址的变量，函数在机器语言层次是载入到内存的代码，因此函数也会有地
+址。既然如此，那指针就可以指向函数的内存地址，于是有了函数指针的概念，函数指针指
+向的是函数代码起始处的地址。
+
+函数指针有什么作用呢？让我们首先来看下面的一段代码（pro-7-8.c）\footnote{该段程
+  序源自《C Primer Plus》，感谢Stephen Prata！}：
+\begin{verbatim}
+  #include <stdio.h>
+  #include <string.h>
+  #include <ctype.h>
+ 
+  char showmenu(void);
+  void eatline(void);
+  void show(void(*fp)(char *), char *str);
+  void ToUpper(char *);
+  void ToLower(char *);
+  void Transpose(char *);
+  void Dummy(char *);
+
+  int main(void)
+  {
+    char line[81];
+    char copy[81];
+    char choice;
+    void (*pfun)(char *);
+
+    puts("Enter a string (empty line to quit):");
+    while (gets(line) != NULL && line[0] != '\0')
+      {
+        while ((choice=showmenu()) != 'n')
+          {
+            switch(choice)
+              {
+              case 'u': pfun = ToUpper; break;
+              case 'l': pfun = ToLower; break;
+              case 't': pfun = Transpose; break;
+              case 'o': pfun = Dummy; break;
+              case 'q': return 1;
+	      }
+            strcpy(copy, line);
+            show(pfun, copy);
+          }
+        puts("Enter a string (empty line to quit):");
+      }
+    puts("Bye!");
+
+    return 0;
+  }
+
+  char showmenu(void)
+  {
+    char ans;
+    puts("Enter menu choice:");
+    puts("u) uppercase l) lowercase");
+    puts("t) transposed case o) original case");
+    puts("n) next string");
+    ans = getchar();
+    ans = tolower(ans);
+    eatline();
+    while (strchr("ulton", ans) == NULL)
+      {
+        puts("Please enter a u, l, t, o, or n: ");
+        ans = tolower(getchar());
+        eatline();
+      }
+    return ans;
+  }
+
+  void eatline(void)
+  {
+    while (getchar() != '\n')
+      continue;
+  }
+
+  void ToUpper(char *str)
+  {
+    while (*str)
+      {
+        *str = toupper(*str);
+        str++;
+      }
+  }
+
+  void ToLower(char *str)
+  {
+    while (*str)
+      {
+        *str = tolower(*str);
+        str++;
+      }
+  }
+
+  void Transpose(char *str)
+  {
+    while (*str)
+      {
+        if (islower(*str))
+          *str = toupper(*str);
+        else if (isupper(*str))
+          *str = tolower(*str);
+        str++;
+      }
+  }
+
+  void Dummy(char *str)
+  {
+    // Do nothing
+  }
+
+  void show(void(*fp)(char *), char *str)
+  {
+    (*fp)(str);
+    puts(str);
+  }
+\end{verbatim}
+这段程序实现的功能是从控制台输入一个字符串，然后根据用户的选择把字符串的字符显示
+为大写、小写或者大小写互换等等。所有的转换和显示都是通过show()函数实现的，在
+show()函数内，根据函数指针*fp所指向的不同函数对字符串进行不同的操作，这样就可以
+用较小的函数体分别实现大写转换、小写转换等独立的功能，而不必在show()函数内写出复
+杂的判断语句，同时还增强了函数的可重用性，使程序逻辑清晰、可读性强，这是函数指针
+强大功能的体现之一。
+
+函数指针的定义形式一般为：
+\begin{verbatim}
+return_type (*name)(parameter list);
+\end{verbatim}
+其中\verb=return_type=是函数返回值的类型，\verb=name=是函数指针的名称，
+\verb=parameter list=是函数的参数列表，函数指针的返回值和参数列表必须和要指向的
+函数一致。比如某函数声明为：\verb=int func(int x, char *y)=，则指向该函数的函数
+指针的定义应该是\verb=int (*pfunc)(int , char *)=。函数指针的定义中参数列表只需
+声明参数类型，不须指出参数名称，这是合理的，因为定义函数指针并不能确定所指向函数
+的参数名，而参数类型才是最重要的信息。
+
+\section{小结}
+本章介绍了C语言中最有特色也是最难理解的部分：数组和指针，尽管本章的篇幅超出本书
+大多数章节，但本章对这两个概念特别是数组的介绍仍然是比较浅显的。关于指针，还有很
+多深层次的知识和使用技巧，以及使用中的陷阱，本书都不做深入介绍，如果想了解更多关
+于指针的技巧和陷阱，我们推荐《C陷阱与缺陷》、《C专家编程》等书籍，这些书从资深程
+序员的角度探讨了很多C语言的特性，其中有较大篇幅关于指针的讨论，可以做为深入学习C
+语言的参考资料。
+
+
+
+\section{习题与上机作业}
+\subsection{习题}
+\begin{enumerate}
+\item\label{xiti_1} 回顾前面章节的示例代码pro-6-5.c，试试如果将第二个if语句中的
+  \verb='M'=改为\verb="M"=会出现什么情况？是否能把程序中的单引号都改为双引号？说
+  说这是什么原理？
+\item 指针和数组有那些联系？在什么情况下可以通用，在什么情况下不可以？
+\item 说说指针都支持那些操作？每种操作和普通变量的操作有什么异同？
+\item 多维数组有什么用处？是否可以用一维数组代替多维数组？
+\item 函数指针能为程序设计带来那些方便？
+\item 了解一下动态链接的概念，试着用函数指针的方法去设计一种动态链接的运行模式。
+\end{enumerate}
+
+\subsection{上机作业}
+\begin{enumerate}
+\item\label{shangji_1} 运行下面的代码，观察运行结果，再分别调整两个指针声明和赋
+  值的顺序，结果如何？根据结果说说指针之间的比较运算的实质是什么？
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int *p1, *p2;
+
+    *p2 = 15;
+    *p1 = 10;
+
+    if (p1 > p2)
+      printf("p1>p2, p1=%p, p2=%p\n", p1, p2);
+    else
+      printf("p1<p2, p1=%p, p2=%p\n", p1, p2);
+
+    return 0;
+  }
+\end{verbatim}
+\item\label{shangji_2} 修改程序pro-7-4.c中二维数组的定义，删掉若干个元素，看程序
+  如何运行？多尝试几次可能的情况（例如\verb!{{1,2,3,4},[2]={9,10,11}}!）。这是否
+  能有助于你理解多维数组的实质呢？
+\item 编写一个程序，由用户输入一个$3\times3$的矩阵，然后输出矩阵的转置。要求使用
+  独立的函数打印矩阵的转置，矩阵用二维数组表示。
+\item 编写一个程序，包含一个独立的函数，接收一个字符串指针数组，并输出这个数组的
+  每一个字符串。
+\item 编写一个动态分配数组的程序，每次从控制台输入数组的长度，然后用自然数填满这
+  个数组并显示出来。
+\item 编写一个分别使用字符串数组和字符串指针数组处理字符串的程序，要求用两种数组
+  分别存储若干个相同的字符串并显示必要的结果，体会这两种数组的相似和差异。
+\end{enumerate}
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End: 
+
+
+

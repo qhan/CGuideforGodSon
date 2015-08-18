@@ -1,0 +1,391 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: chapter10.tex,v 1.1 2008/05/07 06:59:44 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{文件输入/输出}
+本章介绍C语言的文件输入/输出操作。正如介绍控制台输入/输出时提到的，C语言是通过调
+用C标准库中的函数实现输入/输出操作的，这使得C语言的文件系统特别灵活。数据可以按
+照多种格式传送，以便生成不同需要的文件。
+
+\section{流与文件}
+首先来理解两个概念：流和文件。C语言在程序员和设备之间进行了一级抽象，提供了与设
+备无关的一致界面，抽象被称为流，而实际设备则称为文件。
+
+因为C语言要适应各种设备，包括终端显示设备、磁盘驱动器、磁带驱动器等，各种设备差
+异很大。但缓冲文件系统把各种设备都转换成称为流的逻辑设备后，所有流就与设备无关，
+流的性质就一致了，于是能输入/输出的函数就能针对不同的设备进行操作。
+流包括两类：文本流和二进制流。文本流是一种字符序列，二进制流是一种字节序列。
+
+C语言中的文件可以是磁盘文件、终端或者打印机等。程序通过打开文件的操作把流和设备
+建立联系，就可以在程序和文件之间进行数据交换了；通过关闭操作断开流与文件的联系。
+文件根据设备的不同而有所不同，比如磁盘文件可以支持随机存取，而键盘则不行。因此，
+所有的流都是一样的，而文件则不完全一样。
+
+\section{C语言文件系统}
+理解了C语言分离流和文件的机制以后，我们来认识一下C语言的文件系统。C文件系统由一
+些相互关联的函数构成，这些函数包含在头文件\verb=<stdio.h>=中，表\ref{table-9-1}
+列出了常见的一些函数，后面几节我们详细讨论其中一些函数的用法。
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{stdio.h文件中定义的文件系统函数}
+\label{table-9-1}
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\multicolumn{1}{|c|}{名~~~~称} & \multicolumn{1}{c|}{功~~~~能}  \\
+\hline
+~~fopen() & ~~~~打开一个文件  \\
+~~fclose()~~ & ~~~~关闭一个文件 \\
+~~putc() & ~~~~向文件写一个字符 \\
+~~fputc() & ~~~~与putc()相同 \\
+~~getc() & ~~~~从文件读一个字符 \\
+~~fgetc() & ~~~~与getc()相同 \\
+~~fgets() & ~~~~从文件读一个串 \\
+~~fputs() & ~~~~写一个串到文件 \\
+~~fseek() & ~~~~在文件中定位于特定的字节 \\
+~~ftell() & ~~~~返回当前文件位置 \\
+~~fprintf()~~ & ~~~~向文件格式化输出字符 \\
+~~fscanf() & ~~~~从文件格式化输入字符 \\
+~~feof() & ~~~~测试是否达到文件尾，如到则返回true \\
+~~ferror() & ~~~~是否发生文件错误，如发生则返回true \\
+~~rewind() & ~~~~把文件指针放回文件开始处 \\
+~~remove() & ~~~~删除一个文件 \\
+~~fflush() & ~~~~清空一个文件 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+头文件\verb=<stdio.h>=还定义了三个类型和一些宏\footnote{我们将在第\ref{chap_11}
+  章介绍宏，这里我们可以暂时把宏理解为数据或者操作的缩略语。}。
+size\_t、fpos\_t和FILE是\\\verb=<stdio.h>=中定义的三种类型，
+size\_t和fpos\_t相当于unsigned型，而FILE是文\\件指针。
+这个头文件还定义了NULL、EOF、FOPEN\_MAX、SEEK\_SET、
+SEEK\_\\CUP和SEEK\_END等几个宏，关于他们的具体含义，可以查看
+\verb=<stdio.h>=文件。 
+
+文件指针是本章的主线，文件指针是指向定义文件操作信息的指针，信息中包含文件的名字、
+状态和当前的读写位置。文件指针的定义一般如：
+\begin{verbatim}
+  FILE *fp;
+\end{verbatim}
+其中fp是文件指针，文件指针的类型是FILE型，程序必须通过文件指针访问磁盘文件。
+
+\section{打开/关闭文件}
+打开文件的函数是fopen()，该函数打开一个流，将该流和一个文件关联，然后返回相关的
+文件指针。fopen()函数的原型是：
+\begin{verbatim}
+  FILE *fopen(const char *filename, const char *mode);
+\end{verbatim}
+其中，\verb=filename=是一个指向构成文件名的字符串，\verb=mode=指向决定文件打开方
+式的字符串，其合法值见表\ref{table-9-2}。函数的返回值是一个FILE型的指针，用这个
+指针就可以对位于\verb=filename=的文件进行读写操作。
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{fopen()函数合法的操作方式}
+\label{table-9-2}
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\multicolumn{1}{|c|}{方~~~~式} & \multicolumn{1}{c|}{意~~~~义}  \\
+\hline
+~~r & ~~~~以读取方式打开文本文件 \\
+~~w & ~~~~以写入方式生成文本文件 \\
+~~a & ~~~~向文本文件追加写入 \\
+~~rb & ~~~~以读取方式打开二进制文件 \\
+~~wb & ~~~~以写入方式生成二进制文件 \\
+~~ab & ~~~~向二进制文件追加写入 \\
+~~r+ & ~~~~以读取/写入方式打开文本文件 \\
+~~w+ & ~~~~以读取/写入方式生成文本文件 \\
+~~a+ & ~~~~以读取/追加写入方式打开文本文件 \\
+~~r+b & ~~~~以读取/写入方式打开二进制文件 \\
+~~w+b & ~~~~以读取/写入方式生成二进制文件 \\
+~~a+b & ~~~~以读取/追加写入方式打开二进制文件 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+文件既能以文本方式打开，也能以二进制方式打开。一般情况下，文本方式在读取时会把回
+车/换行序列变成新行符，而在写入时进行相反的转换，将新行符换成回车/换行序列。而用
+二进制方式打开文件则不会发生这种转换。
+
+下面的代码用fopen()函数打开名为test.dat的文件：
+\begin{verbatim}
+  FILE *fp;
+
+  if ((fp = fopen("test.dat", "w") == NULL){
+    printf("Cannot open file. \n");
+    exit(1);
+  }
+\end{verbatim}
+其中的if语句用来判断打开文件是否成功，这是一个很有必要的步骤，因为在文件打开错
+误的情况下仍然执行文件的读写操作将可能造成严重的后果。因此上面的代码展示的方法几
+乎成为了打开文件的标准方式。
+
+关闭文件的函数是fclose()，fclose()所做的工作是关闭打开的流，把遗留在缓冲区中的数
+据写入文件，实施操作系统级的关闭操作。fclose()函数的原型是：
+\begin{verbatim}
+  int fclose(FILE *fp);
+\end{verbatim}
+其中，\verb=fp=是要关闭的文件指针，fclose()返回零值表示关闭成功，返回其它值表示
+关闭失败。关闭失败会引起丢失数据、破坏文件等问题，一般只有在驱动器中没有磁盘或者
+磁盘空间不足时才会发生关闭失败。关于fopen()和fclose()两个函数的用法，我们将在下
+一节介绍完读写字符的函数后通过一个例子展示。
+
+\section{读写字符}
+通过表\ref{table-9-1}可知，putc()和fputc()、getc()和fgetc()是两对等价的函数，存
+在两个功能相同的函数，主要是为了和早期的C语言版本保持兼容。putc()和fputc()的原型
+是：
+\begin{verbatim}
+  int putc(int ch, FILE *fp);
+  int fputc(int ch, FILE *fp);
+\end{verbatim}
+其中，\verb=fp=是文件指针，\verb=ch=是要写入的字符，需要注意的是这里要写入的字符
+是int型，但是写入的只是它的低字节。putc()和fputc()写入成功时返回写入的字符，否则
+返回EOF。
+
+getc()和fgetc()的原型是：
+\begin{verbatim}
+  int getc(FILE *fp);
+  int fgetc(FILE *fp);
+\end{verbatim}
+其中\verb=fp=是文件指针，读取的字符放在返回值的低字节内，高字节只有在发生错误的
+时候才不为零，到达文件尾部或者发生错误时，返回EOF。
+
+下面的例子（pro-9-1.c）使用了fopen()、fclose()、putc()和getc()等函数，将从控制台
+读入的字符写入指定的文件里，文件名是通过main()函数的参量输入的：
+\begin{verbatim}
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  int main(int argc, char *argv[])
+  {
+    FILE *fp;
+    FILE *fpr;
+    char ch;
+
+    if (argc != 2)
+      {
+        printf("Please input a filename.\n");
+        exit(1);
+      }
+    if ((fp = fopen(argv[1], "w")) == NULL)
+      {
+        printf("Cannot open file. \n");
+        exit(1);
+      }
+    puts("Plese input something, end with #:");
+    do {
+      ch = getchar();
+      putc(ch, fp);
+    } while(ch != '#');
+    fclose(fp);
+
+    if ((fpr = fopen(argv[1], "r")) == NULL)
+      {
+        printf("Cannot open file. \n");
+        exit(2);
+      }
+    puts("You've inputed:");
+    do {
+      ch = getc(fpr);
+      putchar(ch);
+    } while(ch != '#');
+    fclose(fpr);
+   
+    return 0;
+  }
+\end{verbatim}
+
+\section{读写串}
+C语言的文件读写操作还支持以串为单位的读写，相应的函数是fputs()和fgets()，他们的
+原型分别是：
+\begin{verbatim}
+  int fputs(const char *str, FILE *fp);
+  char *fgets(char *str, int length, FILE *fp);
+\end{verbatim}
+其中fputs()的参数分别是要写入的字符串\verb=str=和文件指针\verb=fp=。而fgets()函
+数的参数则稍微复杂些，第一个参数\verb=str=是用于存储输入的地址，第二个参数
+\verb=length=表示输入字符的最大长度，第三个参数\verb=fp=是要读取文件的文件指针，
+而函数的返回值也是读取的串的指针，如果fgets()函数遇到EOF则返回NULL。下面的程序用
+fputs()和fgets()实现了读入字符并存入文件的功能（pro-9-2.c）：
+\begin{verbatim}
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  int main(int argc, char *argv[])
+  {
+    FILE *fp;
+    FILE *fpr;
+    char ch[80];
+
+    if (argc != 2)
+      {
+        printf("Please input a filename.\n");
+        exit(1);
+      }
+    if ((fp = fopen(argv[1], "w")) == NULL)
+      {
+        printf("Cannot open file. \n");
+        exit(1);
+      }
+    puts("Plese input something:");
+    while (fgets(ch, 80, stdin) != NULL && ch[0] != '\n')
+      fputs(ch, fp);
+    fclose(fp);
+
+    if ((fpr = fopen(argv[1], "r")) == NULL)
+      {
+        printf("Cannot open file. \n");
+        exit(2);
+      }
+    puts("You've inputed:");
+    while (fgets(ch, 80, fpr) != NULL && ch[0] != '\n')
+      fputs(ch, stdout);
+    fclose(fpr);
+  
+    return 0;
+  }
+\end{verbatim}
+其中用到了两个特殊的变量\verb=stdin=和\verb=stdout=，它们分别代表标准输入/输出设
+备，一般情况下会指向键盘和显示器。
+
+\section{读写数据块}
+fread()和fwrite()两个函数允许读写各种类型的数据块，它们的原型是：
+\begin{verbatim}
+  size_t fread(void *buffer, size_t num_btyes, 
+               size_t count, FILE *fp);
+
+  size_t fwrite(const void *buffer, size_t num_bytes, 
+                size_t count, FILE *fp);
+\end{verbatim}
+其中\verb=buffer=是接收读入/写入到文件的内存区的指针，\verb=count=的值确定读/写
+的项数，每项的长度等于\verb=num_bytes=（以字节计），\verb=fp=是指向流的文件指针。
+
+fread()和fwrite()两个函数一般针对按二进制方式打开的文件，例如下面的程序分别向文
+件写入int、long和double型数据（pro-9-3.c）：
+\begin{verbatim}
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  int main(void) 
+  {
+    FILE *fp;
+    int a = 100, ar;
+    long b = 1234500L, br;
+    double x = 3.1415, xr;
+  
+    if ((fp = fopen("mytest", "wb+")) == NULL)
+      {
+        printf("Cannot open file.\n");
+        exit(1);
+      }
+    fwrite(&a, sizeof(int), 1, fp);
+    fwrite(&b, sizeof(long), 1, fp);  
+    fwrite(&x, sizeof(double), 1, fp);
+    rewind(fp);
+    fread(&ar, sizeof(int), 1, fp);
+    fread(&br, sizeof(long), 1, fp);
+    fread(&xr, sizeof(double), 1, fp);
+    printf("%d, %ld, %f\n", ar, br, xr);
+    fclose(fp);
+  
+    return 0;  
+  }
+\end{verbatim}
+这段程序中用到了rewind()函数，它的作用在表\ref{table-9-1}中也提到过，就是把文件
+指针放回文件的开始。
+
+\section{格式化输入输出}
+C语言文件系统还包括两个格式化输入输出函数：fprintf()和fscanf()，这两个函数的原型
+分别是：
+\begin{verbatim}
+  int fprintf(FILE *fp, const char *control_string, 
+              ITEM1, ITEM2, ...);
+  int fscanf(FILE *fp, const char *control_string, 
+             ITEM1, ITEM2, ...);
+\end{verbatim}
+这两个函数除了操作对象与printf()和scanf()不同外，使用方法和效果是完全一样的，因
+此这里就不再重复。下面是一个使用fprintf()和fscanf()的例子（pro-9-4.c）：
+\begin{verbatim}
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  int main(void)
+  {
+    FILE *fp;
+    char str[80], strr[80];
+    int x, xr;
+
+    if ((fp = fopen("mytest", "w")) == NULL)
+      {
+        printf("Cannot open file.\n");
+      }
+    printf("Enter a string and a number: \n");
+    fscanf(stdin, "%s %d", str, &x);
+    fprintf(fp, "%s %d", str, x);
+    fclose(fp);
+
+    if ((fp = fopen("mytest", "r")) == NULL)
+      {
+        printf("Cannot open file.\n");
+      }
+    fscanf(fp, "%s %d", strr, &xr);
+    fprintf(stdout, "%s %d\n", strr, xr);
+
+    return 0;
+  }
+\end{verbatim}
+
+\section{小结}
+本章介绍了C语言的文件系统以及相关的函数，C语言分离流和文件的思想为不同硬件设备提
+供了统一的输入输出方法。文件输入输出的函数包括字符读写、串读写、块读写以及格式化
+读写等多组函数，使用是可以根据要处理的对象选择合适的函数。文件指针是贯穿本章的概
+念，它是进行文件操作的基本要素，也是联系抽象的流和具体的文件的纽带，通过文件指针，
+我们可以用一种统一的观点对各种不同的物理设备进行读写操作。
+
+\section{习题与上机作业}
+\subsection{习题}
+\begin{enumerate}
+\item 流和文件是什么关系？二进制流是否和二进制文件有必然的对应关系？
+\item 二进制文件和文本文件有什么不同？对于二进制流而言，二进制文件和文本文件有什
+  么区别？对于文本流呢？
+\item 检查下面的程序有哪些错误：
+\begin{verbatim}
+  int main(void)
+  {
+    int *fp;
+    int i;
+
+    fp = fopen("mytest", 'r');
+    for (i = 0; i<10; i++)
+      fputc(fp, "Hello world!");
+    fclose(fp);
+  }
+\end{verbatim}
+\item 通过使用fprintf()和fwrite()两个函数保存4321567，有什么区别？
+\item 通过使用putc()和fwrite()两个函数保存A，有什么区别？
+\end{enumerate}
+
+\subsection{上机作业}
+\begin{enumerate}
+\item 编写一个文件复制程序，从命令行参数argv[]获得源文件和目标文件的名字，使用文
+  本模式。
+\item 编写一个文件复制程序，以交互方式获取源文件和目标文件的名字，使用二进制模式。
+\item\label{shangji_9_1} 编写一个程序，生成一个$3\times3$的矩阵，分别以二进制模
+  式和文本模式保存。
+\item 修改第\ref{shangji_9_1}题的程序，从保存的文件中以二进制模式和文本模式读取
+  数据，观察显示的结果有何不同？
+\end{enumerate}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End: 
+
+
+

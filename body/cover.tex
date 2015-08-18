@@ -1,0 +1,118 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: The title page
+% $Id: cover.tex,v 1.5 2008/05/07 08:19:51 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ifx\pdfoutput\undefined % We're not running pdftex
+\else
+\pdfbookmark{封面}{title}
+\fi
+\newlength{\centeroffset}
+\setlength{\centeroffset}{-0.5\oddsidemargin}
+\addtolength{\centeroffset}{0.5\evensidemargin}
+%\addtolength{\textwidth}{-\centeroffset}
+\thispagestyle{empty}
+\vspace*{\stretch{1}}
+\noindent\hspace*{\centeroffset}\makebox[0pt][l]{\begin{minipage}{\textwidth}
+\flushright
+%{\Huge\bfseries The Not So Short\\
+%Introduction to \LaTeXe
+%
+%}
+{\huge \bfseries C语言实践教程}
+\noindent\rule[-1ex]{\textwidth}{5pt}\\[2.5ex]
+\hfill\emph{\Large 福珑龙芯电脑配套教材}
+\end{minipage}}
+
+%\vspace{\stretch{1}}
+%\noindent\hspace*{\centeroffset}\makebox[0pt][l]{\begin{minipage}{\textwidth}
+%\flushright
+%{\bfseries
+%by Tobias Oetiker\\[1.5ex]
+%Hubert Partl, Irene Hyna and  Elisabeth Schlegl\\[3ex]}
+%Version~3.20, 09 August, 2001
+%\end{minipage}}
+\vspace{\stretch{1.5}}
+\noindent\hspace*{\centeroffset}\makebox[0pt][l]{%
+%\flushright
+\begin{minipage}{\textwidth}{%
+%{\bfseries 原版作者：}Tobias Oetiker\\[1.5ex]
+%　　　　　            Hubert Partl, Irene Hyna and  Elisabeth Schlegl\\[1.5ex]
+%{\bfseries 原版版本：}Version~3.20, 09 August, 2001\\[3ex]
+{\bfseries 作~~~~者：}韩~~琦\\[1.5ex]
+{\bfseries 出版社：}???}
+\end{minipage}}
+
+%\addtolength{\textwidth}{\centeroffset}
+\vspace{\stretch{2}}
+
+\pagebreak
+
+\begin{center}
+  {\Large ~~~~}
+\end{center}
+
+\begin{center}
+  {\Large 前~~~~言}
+\end{center}
+
+\begin{center}
+  {\large------ 谨以此书向胡伟武同志致敬！}
+\end{center}
+
+著作有序，一般都有高人捧场，代为作序。这本小册子仅仅是一本针对龙芯福珑电脑的C语
+言教程，恐怕只有自己写个前言给读者一个关于本书交代了。
+
+自1970年代Ken和Dennis创造了C语言以来，计算机程序设计语言经历了若干代的演化，如今已是
+“乱花渐欲迷人眼”，甚至出现了中文编程的语言！做为初学者，如何选择一门适合自
+己的程序设计语言？我的建议是，如果你今后可能投身于计算机开发相关的工作、或者
+你还想“知其所以然”，那么请从C语言开始吧！掌握了C，你会很容易理解其他语言，
+包括时髦的面向对象语言，这道理就像让开解放车走川藏公路的汽车兵来开自动档轿车一
+样。当然了，不要被崎岖的山路吓到，山路自有山路的乐趣。
+
+这本书是一本面向龙芯电脑的C语言教程，面向龙芯电脑的教程和普通教程其实没有本质区
+别，只是针对性稍强而已，毕竟C语言是唯 
+一的。本书从Unix和C语言的佳话开始，一步步带领读者进入龙芯平台上的C语言世界，从龙
+芯电脑的使用，到Linux操作系统中编写代码、编译程序，再到用GDB调试、用make管理大型
+程序，我们将C语言本身的知识点和实践知识编织在一起，搭建了一个合理的学习阶梯。另
+外，每章都有针对性很强的习题和上机作业，难度并不大，但对于巩固知识点很有帮助；贯
+穿全书的示例程序都在龙芯(2E)福珑电脑上编写，并经过了编译、运行的测试。本
+书面向的是C语言的初学者，也许全书的结构安排并不适合熟练的C程序员顺序阅读，但其中
+简明扼要的知识点归纳也可以做为程序员手头的参考。
+
+计算机类图书中，关于C语言的书籍汗牛充栋，但大多数都大同小异，堪称经典的凤毛
+麟角。翻翻目录就不难看出，这本书也没能免俗，只是一本中规中矩的教材，唯一不同的是，
+这本书是完全面向龙芯电脑的。“龙芯”，是写这本书的唯一动机，写这本书，不为经典，
+不为首创，只为龙芯！说龙芯是中华民族伟大复兴的一个里程碑，并不为过，
+能为龙芯做点事情，实在是荣幸之至！
+
+
+这本书能和大家见面，实在不易。笔者还只是一个在实验室里没日没夜为学位奋斗的博士生，
+没有C语言的教学经验，也没有充足的时间，更没有大作家的生花妙笔，磕磕绊绊写了半年
+多，仍然是有很多不尽如意的地方。不过对于我本人来说，这本书能够付印就是最大的慰藉，
+希望能够对读者使用龙芯电脑学习C语言有所帮助！写作期间，江苏龙梦科技的喻建文同志
+给予了设备上、写作上以及精神上的极大帮助，他为这本书倾注了大量心血，感谢建文兄始
+终如一的信任和支持！感谢江苏龙梦科技为龙芯产业化付出的艰辛努力！从个人的角度，我
+打心眼里感谢（并崇拜）胡伟武同志以及他带领的龙芯研发团队！感谢哈工大优秀的青年教
+师孙志刚，他坚定了我对C语言的信心和热情！
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~韩~~琦
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~2008
+年5月
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+哈工大科学园
+
+
+
+\endinput
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End:

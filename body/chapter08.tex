@@ -1,0 +1,469 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: chapter08.tex,v 1.1 2008/05/07 06:59:44 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{结构、联合、枚举与用户定义类型}\label{chap_07}
+C语言有丰富的基本数据类型以及数组和指针等数据表示形式，但是在解决实际问题中，还
+可能需要更加复杂和灵活的数据表示形式，比如要表示数据库中的一条记录，这条记录可能
+包括姓名（字符串）、年龄（整型）、成绩（浮点型）等信息。这时基本数据类型和数组都
+已经不足以表达这样复杂的信息，不过C语言中还有结构变量等数据形式来增强数据的表示
+能力，它们包括位域、联合、枚举等，本章我们就来介绍这些数据形式及其使用方法。
+
+\section{结构}
+\subsection{结构的定义与访问}
+结构是在一个变量名下引用的多个变量的集合，结构定义生成了一个样板，用来生成结构变
+量，生成的每个结构变量都具有同样的变量。构成结构的变量称为结构的成员，或者称为元
+素或域。
+
+结构定义的一般形式为：
+\begin{verbatim}
+  struct tag{
+    type member-name;
+    type member-name;
+    type member-name;
+    ... ...
+  }structure-variables;
+\end{verbatim}
+其中，关键字\verb=struct=说明定义的是一个结构，\verb=tag=是这个结构的类型标志符，
+在一定程度上相当于\verb=int=这样的类型标志，也可以用来定义具有这种结构的结构变量。
+大括号内部的\verb=type member-name;=是用来定义结构成员的，一个结构可以有多个成员，
+成员可以是任何数据类型，包括本章介绍的结构、联合、枚举等。最后的
+\verb=structure-variables=可以是一个或多个变量名，相当于直接定义了若干个这种类型
+的结构变量。
+
+声明某种类型的结构变量用如下形式：
+\begin{verbatim}
+  struct tag str-var;
+\end{verbatim}
+和普通的变量声明相比，只是在结构的类型标志符前面加了关键字
+\verb=struct=\footnote{如果用typedef为结构定义一个新的类型名，就可以直接用类型名
+  声明变量而无须struct关键字，我们将在本章第\ref{sec_typedef}节介绍typedef关键
+  字。}。
+
+访问结构的成员需要通过圆点(.)操作符，用圆点连接结构变量名和成员名标示这个具体的
+成员变量，其一般形式为：
+\begin{verbatim}
+  obj-name.member-name
+\end{verbatim}
+例如\verb!str.numb = 10;!表示给结构变量\verb=str=的成员\verb=numb=赋值。
+下面的例子展示了如何对结构赋值和访问其成员（pro-8-1.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    struct mystr{
+      int x;
+      int y;
+    } st1, st2;
+  
+    st1.x = 10;
+    st1.y = 20;
+    st2 = st1;
+    printf("st1's members is: x=%d, y=%d\n",
+           st1.x, st1.y);
+    printf("st2's members is: x=%d, y=%d\n",
+           st2.x, st2.y);
+
+    return 0;
+  }
+\end{verbatim}
+其中，同样类型的结构变量之间可以直接赋值，其结果是把表达式右边的结构变量的全部成
+员的值赋给表达式左边的结构变量。
+
+\subsection{结构数组}
+结构数组就是由结构变量组成的数组，使用结构时必须先定义结构，在定义这类结构的数组，
+定义结构数组的一般形式是：
+\begin{verbatim}
+  struct tag str-var[n];
+\end{verbatim}
+其中方括号内是数组的大小，表示数组中结构变量的个数。访问结构数组中的结构与普通数
+组一样都是通过下标实现的，例如有结构数组\verb=stru[10]=，下面的语句访问第5个结构
+变量中的int型成员\verb=x=：
+\begin{verbatim}
+  printf("the No.5 x is:%d \n", stru[4].x);
+\end{verbatim}
+
+\subsection{指向结构的指针}
+与其它数据对象一样，C语言也允许指针指向结构，指向结构的指针叫做结构指针。结构指
+针的定义形式如下：
+\begin{verbatim}
+  struct str-name * str-pointer;
+\end{verbatim}
+与普通数据类型指针的不同之初还是在于\verb=struct=这个关键字，这个语句声明了一个
+指向\verb=str-name=类型结构的指针\verb=str-pointer=。
+
+结构指针与结构变量在形式上最大的区别在于访问成员的方式，结构指针使用箭头操作符
+(\verb=->=)访问结构的成员。以程序pro-8-1.c中的结构类型为例，如果定义了一个名叫
+\verb=strp=的结构指针，那么访问\verb=strp=成员的方法将是：
+\begin{verbatim}
+  printf("%d \n", strp->x);
+\end{verbatim}
+
+\subsection{向函数传递结构}
+向函数传递结构包括两层意思，一是传递结构的成员，二是传递整个结构。我们先来看如何
+向函数传递结构成员。
+
+传递结构成员时可以把结构成员当做该成员本身类型的数据，用前面介绍的访问成员的方
+法给出相应的形式即可。例如有结构：
+\begin{verbatim}
+  struct str{
+    int x;
+    int y;
+    int id;
+    char name[10];
+  } mystr;
+\end{verbatim}
+下面是向函数传递结构变量\verb=mystr=的成员的例子：
+\begin{verbatim}
+  func1(mystr.x);
+  func2(mystr.y);
+  func3(mystr.id);
+  func4(mystr.name[3]);
+  func5(mystr.name);
+\end{verbatim}
+其中前四个都是值传递方式，而第五个是地址传递的方式，因为\verb=mystr.name=是指向
+数组\verb=name[]=的指针。
+
+向函数传递整个结构也包括两种方式：值传递和地址传递。值传递的方式如下面的例子所示：
+\begin{verbatim}
+  #include <stdio.h>
+
+  struct struct_type{
+    int x, y;
+    char name[10];
+  };
+
+  void subfunc(struct struct_type param);
+
+  int main(void)
+  {
+    struct struct_type str;
+
+    str.x = 5;
+    str.name[0] = 'T';
+    str.name[1] = 'o';
+    str.name[2] = 'm';
+    str.name[3] = '\0';
+    subfunc(str);
+  
+    return 0;  
+  }
+
+  void subfunc(struct struct_type param)
+  {
+    printf("The name is %s.\n", param.name);
+  }
+\end{verbatim}
+这种方式把整个结构的数据都向函数拷贝了一份，由于结构一般都比基本数据类型大很多，
+因此这种值传递的方式往往比较慢且占用较多内存。
+
+利用结构指针向函数传递结构变量地址是一种更高效的参数传递方式，当结构指针被传递给
+函数时，只有结构的地址被压栈，因此函数调用速度很快，同时函数还可以修改传递的结构
+的成员。例如我们用结构指针的方式改写上面的程序（pro-8-3.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  struct struct_type{
+    int x, y;
+    char name[10];
+  };
+
+  void subfunc(struct struct_type *param);
+
+  int main(void)
+  {
+    struct struct_type str;
+
+    str.x = 5;
+    str.name[0] = 'T';
+    str.name[1] = 'o';
+    str.name[2] = 'm';
+    str.name[3] = '\0';
+    subfunc(&str);
+  
+    return 0;  
+  }
+
+  void subfunc(struct struct_type *param)
+  {
+    printf("The name is %s.\n", param->name);
+  }
+\end{verbatim}
+注意程序pro-8-2.c和程序pro-8-3.c的差别在于调用结构的函数的参数列表的定义和调用时
+参数的不同，函数声明时，参数列表变成了函数指针，而在调用函数时，输入的实参是用
+\verb=&=操作符获得的结构变量的地址。
+
+\subsection{嵌套结构}
+与函数不允许嵌套定义不同的是，结构是允许嵌套定义的。也就是说可以一个结构可以是另
+一个结构的成员。例如下面的例子：
+\begin{verbatim}
+  struct str1{
+    int x;
+    int y;
+  };
+
+  struct str2{
+    struct str1 size;
+    int id;
+    char name[10];
+  }; 
+\end{verbatim}
+在\verb=str2=中，有一个类型为\verb=str1=的成员\verb=size=。关于嵌套的层数，C89中
+规定至少允许嵌套15层，而C99标注建议至少允许63层。
+
+\section{联合}
+联合提高了以多种方式解释同一位模式的方法，也即联合定义了多种变量共享一片内存，联
+合的大小等于成员变量大小的最大值。联合定义的一般形式是：
+\begin{verbatim}
+  union tag{
+    type member-name;
+    type member-name;
+    ... ...
+  }
+\end{verbatim}
+联合常用于需要频繁转换数据类型的场合，例如我们定义了下面的一个联合：
+\begin{verbatim}
+  union myun{
+    int x;
+    char c;
+  } u;
+\end{verbatim}
+在联合变量\verb=u=中，整型变量\verb=x=和字符型变量\verb=c=共享一片内存，如图
+\ref{fig_8_1}所示：
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1.5in]{./figures/chap08/fig-8-1}
+\caption{联合在内存中的状态} 
+\label{fig_8_1}
+\end{figure}
+\verb=c=占一字节，\verb=x=占两字节（假定int型占两字节），程序可以通过\verb=x=访
+问联合变量\verb=u=中的数据，也可以通过\verb=c=访问\verb=u=中的数据。访问联合变量
+的成员数据方法和结构类似，也是通过圆点操作符(.)和箭头操作符(\verb=->=)，直接使用
+联合变量名时用圆点操作符，而通过指针访问联合变量是则用箭头操作符。
+
+\section{枚举}
+枚举也是一种比较常用的数据结构，枚举是一系列命名的整型常量。例如从周一到周日就是
+一种枚举：
+\begin{verbatim}
+    Monday, 
+    Tuesday, 
+    Wednesday, 
+    Thursday, 
+    Friday, 
+    Saturday, 
+    Sunday
+\end{verbatim}
+
+枚举的定义和结构类似，只是枚举使用enum关键字：
+\begin{verbatim}
+  enum tag{enumeration list} variable_list;
+\end{verbatim}
+声明一个枚举类型可以先定义该类型，再用来声明枚举变量，如：
+\begin{verbatim}
+  enum weekday{
+    Monday, 
+    Tuesday, 
+    Wednesday, 
+    Thursday, 
+    Friday, 
+    Saturday, 
+    Sunday
+  };
+
+  enum weekday week1;
+\end{verbatim}
+也可以直接在定义类型时声明枚举变量：
+\begin{verbatim}
+  enum weekday{
+    Monday, 
+    Tuesday, 
+    Wednesday, 
+    Thursday, 
+    Friday, 
+    Saturday, 
+    Sunday
+  }week1, week2;
+\end{verbatim}
+在这种情况下，如果程序的其它部分不再需要声明这种类型的枚举变量，可以省略枚举的标
+记符\verb=weekday=。
+
+和结构变量、联合变量不同的是，枚举变量并没有成员的概念，枚举定义中的符号代表一个
+数值，例如\verb=week1=的取值和其对应的符号是：
+\begin{verbatim}
+    0    Monday 
+    1    Tuesday 
+    2    Wednesday 
+    3    Thursday 
+    4    Friday 
+    5    Saturday 
+    6    Sunday
+\end{verbatim}
+于是我们可以用相应的符号表示枚举变量的值，比如\verb!week1 = Monday;!是一个合法的
+语句，而下面的语句：
+\begin{verbatim}
+  if (week1 == Friday)
+    printf("Today is %d, tomorrow is %d.\n", week1, Saturday);
+\end{verbatim}
+将会在屏幕上打印出\verb=Today is 4, tomorrow is 5.=。
+
+枚举中符号和整数值的对应关系遵循这样的原则，第一个符号对应0，其后每个符号都对应
+其前一个符号对应值加1。C语言允许在定义枚举符号时指定其对应值，例如：
+\begin{verbatim}
+  enum weekday{
+    Monday, 
+    Tuesday, 
+    Wednesday, 
+    Thursday = 100, 
+    Friday, 
+    Saturday, 
+    Sunday
+  };
+\end{verbatim}
+枚举符号和整数值的对应关系则变为：
+\begin{verbatim}
+    0    Monday 
+    1    Tuesday 
+    2    Wednesday 
+    100  Thursday 
+    101  Friday 
+    102  Saturday 
+    103  Sunday
+\end{verbatim}
+最后，关于枚举需要记住的是，枚举变量虽然可以用符号表示，但是其实质还是一个整数，
+所以不要试图对枚举变量进行字符串的赋值、打印等操作，例如
+\verb=printf("%s", week1);=不会得到期待的字符串输出的结果。
+
+\section{位域}
+位域是C语言的不同于其它语言的特色之一，它允许程序访问内存数据的最小单元--位，这
+在很多场合是很有意义的。位域的主要应用在于：
+\begin{itemize}
+\item 在内存紧张时，可以把若干布尔变量存入一个字节中，从而节约内存；
+\item 某些设备会把编码信息传到各个位时，可以对这些信息进行操作；
+\item 加密算法和纠错码等算法可能需要访问字节的位。
+\end{itemize}
+这些任务也可以通过位操作实现，但是位域将更加高效。
+
+位域定义的一般形式是：
+\begin{verbatim}
+  type name:length;
+\end{verbatim}
+其中\verb=type=定义位域的类型，必须是int、signed或unsigned，C99中还支持\_BOOL型。
+\verb=name=是位域名，\verb=length=指定位域的位数。
+
+位域一般是在结构中定义的，例如分析硬件设备的输入，常定义一个包含许多位域的结构，
+以方便的访问硬件输入的每一位。
+
+\section{typedef}\label{sec_typedef}
+typedef关键字用来定义新的数据类型名，注意它并不产生新的数据类型，只是定义已有类
+型的新名字。在结构、枚举、联合的定义中，我们都称其中的名
+字为标记，因为不能直接用这个名字来定义新的变量，而typedef则可以给它们定义类型名，
+从而可以直接用类型名定义变量，而不必再加上struct、enum等关键字。当然typedef不仅
+仅用于结构等类型的定义，它可以定义C语言任意合法的数据类型。
+typedef语句的一般形式为：
+\begin{verbatim}
+  typedef type newname;
+\end{verbatim}
+例如我们可以重新定义double型的名字：\verb=typedef double db=。在一些C语言库中，
+常常可以见到一些颇有风格的类型名，这都是为了方便和美观用typedef对基本数据类型进
+行的定义。对于结构、枚举、联合的类型定义也是typedef常见的用法。例如：
+\begin{verbatim}
+  typedef struct mystr_tag{
+    int x;
+    int y;
+    int id;
+    char name[10];
+  } mystr;
+
+  mystr st1;
+\end{verbatim}
+用\verb=typedef=定义结构为\verb=mystr=类型名，就可以用\verb=mystr=直接定义结构变量了。
+
+\section{小结}
+本章介绍了C语言中定义自己的类型的方法，包括结构、联合、枚举、位域等，并介绍了
+typedef关键字，可以通过它为已存在的类型定义新名字。在解决实际问题的时候，结构、
+枚举等类型往往能够更好的描述实际问题。学习完本章的内容后，我们已经了解了C语言全
+部的数据类型，包括基本数据类型、数组、结构、联合、枚举、位域等，但是要熟练的掌握
+和应用，还需要更多在编程实践中的锻炼。
+
+\section{习题与上机作业}
+\subsection{习题}
+\begin{enumerate}
+\item 指出下面的定义有什么错误：
+  \begin{enumerate}
+  \item 定义一个结构：
+\begin{verbatim}
+      sturcture {
+        int x;
+        int y:
+        char str[10]
+      }
+\end{verbatim}
+  \item 定义一个枚举：
+\begin{verbatim}
+      enum enum{
+        item1;
+        item2;
+        char item3[3];
+      };
+\end{verbatim}
+  \item 定义一个枚举：
+\begin{verbatim}
+      enum {
+        item1;
+        item2;
+        char item3[3];
+      };
+\end{verbatim}
+  \end{enumerate}
+  \item 设计一个结构模板，保存农历的十二个月份的名字，以及每个月的天数、每个月的
+    两个节气。
+  \item 用typedef定义一种关于12星座的枚举类型，并用该类型定义一个枚举变量，写出
+    相应的代码。
+  \item 谈谈联合和位域的作用，从节约内存的角度分别谈谈两者的特点。
+  \item 编写一段代码，用typedef重新定义int和double型，并用新名字定义个一个结构变
+    量。
+\end{enumerate}
+
+\subsection{上机作业}
+\begin{enumerate}
+\item\label{shangji_8_1} 编写一个记录日历信息的结构，包括年份、12个月份的名称和
+  天数，并且要有计算某日是星期几的能力。
+\item 编写一段程序，利用第\ref{shangji_8_1}题中的结构实现用户输入一个日期，程序
+  计算并显示当天是星期几，距今天有多少天？
+\item 编写一段程序，包含两个子程序，分别对一个结构体进行赋值和打印的操作，对两个
+  子程序的调用在main()函数中进行。用至少两种方法向子程序传递结构的数据。
+\item 串行通信适配器的状态以一个字节表示，每一位的意义如下。编写一段程序，使用位
+  域检测来自硬件设备的状态数据，并分别显示这八种状态。
+  \begin{table}[htbp]
+    \renewcommand{\arraystretch}{1.3}
+    \begin{center}
+      \begin{tabular}{ll}
+        位 & 意义  \\
+        0 & 清除后发送线路改变 \\
+        1 & 数据就绪改变 \\
+        2 & 检测到尾边界 \\
+        3 & 接收线路改变 \\
+        4 & 清除后发送 \\
+        5 & 数据就绪 \\
+        6 & 电话振铃 \\
+        7 & 已接收信号 \\
+      \end{tabular}
+    \end{center}
+  \end{table}
+
+  
+\end{enumerate}
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End: 
+
+
+

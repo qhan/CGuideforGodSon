@@ -1,0 +1,439 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: appendix3.tex,v 1.1 2008/05/07 06:59:43 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{附录2：C语言编程常见错误}
+下面列举一些C语言初学时容易出现的错误，希望能以此做为参照，避免犯类似的错误
+\footnote{这部分内容大多来源于谭浩强老师多年的教学经验，在此向谭老师致敬！}。 
+
+\subsubsection*{1. 忘记定义变量}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    x=3;
+    y=6;
+    printf("%d\n",x+y);
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{2. 输入输出的数据的类型与所用格式说明符不一致}
+~~
+
+例如：若a已定义为整型，b已定义为实型。
+\begin{verbatim}
+  a=3; b=4.5;
+  printf("%f %d\n",a,b);
+\end{verbatim}
+编译时不给出出错信息，但运行结果将与原意不符，输出为
+\begin{verbatim}
+  0.000000  16402
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{3. 未注意int型数据的数值范围}
+~~
+
+一般微型计算机上使用的C编译版本，对一个整型数据分配两个字节。因此一个整数的范围
+为$-2^{15} \sim 2^{15}-1$，即$-32768 \sim 32767$。常见这样的程序段：
+\begin{verbatim}
+  int num;
+  num=89101;
+  printf("%d",num);
+\end{verbatim}
+得到的却是$23565$，原因是$89101$已超过$32767$。两个字节容纳不下$89101$，则将高位
+截去。 
+
+%------------------------------------------------------------------------
+\subsubsection*{4. 输入变量时忘记使用地址符}
+~~
+
+例如：
+\begin{verbatim}
+  scanf("%d%d",a,b);
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{5. 输入时数据的组织与要求不符}
+~~
+
+用scanf函数输入数据，应注意如何组织输入数据。假如有以下scanf函数：
+\begin{verbatim}
+  scanf("%d%d",&a,&b);
+\end{verbatim}
+有人按下面的方法输入数据：
+\begin{verbatim}
+  3,4
+\end{verbatim}
+这是错的，数据间应该用空格来分隔。
+
+%------------------------------------------------------------------------
+\subsubsection*{6. 误把"="作为"等于"比较符}
+~~
+
+在许多高级语言中，用"="符号作为关系运算符"等于"。例如，在BASIC或PASCAL程序中都可
+以写 
+\begin{verbatim}
+  if (a=b)   then...
+\end{verbatim}
+但在C语言中，"="是赋值运算法，"=="才是关系运算符"等于"。如果写成
+\begin{verbatim}
+  if (a=b)   printf("a equal to b");
+\end{verbatim}
+C编译程序将(a=b)作为赋值表达式处理，将b的值赋给a，然后判断a的值是否为零。若为非
+零，则作为"真";若为零作为假。
+
+%------------------------------------------------------------------------
+\subsubsection*{7. 语句后面漏分号}
+~~
+
+C语言规定语句末尾必须有分号。分号是C语言不可缺少的一部分。
+
+%------------------------------------------------------------------------
+\subsection*{8. 在不该加分号的地方加了分号}
+~~
+
+例如：
+\begin{verbatim}
+  if (a>b);
+    printf("a is larger than b\n");
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{9. 对应该有花括号的复合语句，忘记加花括号}
+~~
+
+例如：
+\begin{verbatim}
+  sum=0;
+  i=1;
+  while (i<=100)
+    sum=sum+1;
+    i++;
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{10. 括号不配对}
+~~
+
+当一个语句中使用多层括号时常出现这类错误，纯属粗心所致。如：
+\begin{verbatim}
+  while ((c=getchar()! ='#')
+    putchar(c);
+\end{verbatim}
+少了一个右括号。
+
+%------------------------------------------------------------------------
+\subsubsection*{11. 在用标识符时，忘记了大写字母和小写字母的区别}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int a,b,c;
+    a=2;b=3;
+    C=A+B;
+    printf("%d+%d=%",A,B,C);
+  }
+\end{verbatim}
+编译时出错。
+
+%------------------------------------------------------------------------
+\subsubsection*{12. 引用数组元素时误用了圆括号}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int i,a(10);
+    for (i=0;i<10;i++)
+      scanf("%d",&a(i));
+      ...
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{13. 在定义数组时，将定义的"元素个数"误认为是"可使用的最大下标值"}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    static int a[10]={1,2,3,4,5,6,7,8,9,10};
+    int i;
+    for (i=1;i<=10;i++)
+      printf("%d",a[i]);
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{14. 对二维或多维数组的定义和引用的方法不对}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int a[5,4];
+    ...
+    printf("%d",a[1+2,2+2]);
+    ...
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{15. 误以为数组名代表数组中全部元素}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    static int a[4]={1,3,5,7};
+    printf("%d%d%d%d\n",a);
+  }
+\end{verbatim}
+企图用数组名代表全部元素。
+
+%------------------------------------------------------------------------
+\subsubsection*{16. 混淆字符数组与字符指针的区别}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    char str[4]
+    str="Computer and c";
+    printf("%s\n",str);
+  }
+\end{verbatim}
+编译出错。
+
+%------------------------------------------------------------------------
+\subsubsection*{17. 在引用指针变量之前没有对它赋以确定的值}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    char *p;
+    scanf("%s",p);
+    ...
+  }
+\end{verbatim}
+没有给指针变量p赋值就引用它，编译时给出警告信息。
+
+%------------------------------------------------------------------------
+\subsubsection*{18. switch语句的各分支中漏写break语句}
+~~
+
+例如：
+\begin{verbatim}
+  switch(score)
+  {
+    case 5: printf("Very good!");
+    case 4: printf("Good!");
+    case 3: printf("Pass!");
+    case 1: printf("Fail!");
+    defult: printf("Data error!");
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{19. 混淆字符和字符串的表示形式}
+~~
+
+例如：
+\begin{verbatim}
+  char sex;
+  sex = "M";
+  ...
+\end{verbatim}
+sex是字符变量，只能存放一个字符。而字符常量的形式是用单引号括起来的，应改为：
+\begin{verbatim}
+  sex = 'M';
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{20. 使用自加(++)和自减(--)运算符是出的错误}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int *p,a[5]={1,3,5,7,9};
+    p=a;
+    printf("%d",*p++);
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{21. 所调用的函数在调用语句之后才定义，而又在调用前未说明}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    float x,y,z;
+    x=3.5; y=-7.6;
+    z=max(x,y);
+    printf("%f\n",z);
+  }
+  float max(float x, float y)
+  {
+    return(z=x>y?x:y)'
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{22. 误认为形参值的改变会影响实参的值}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int a,b;
+    a=3; b=4;
+    swap(a,b);
+    printf("%d,%d\n",a,b);
+  }
+  swap(int x, int y)
+  {
+    int t;
+    t=x; x=y; y=t;
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{23. 函数的实参和形参类型不一致}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int a=3,b=4;
+    c=fun(a,b);
+    ...
+  }
+  fun(float x, float y)
+  {
+    ...
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{24. 不同类型的指针混用}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int i=3,*p1;
+    float a=1.5,*p2;
+    p1=&i; p2=&a;
+    p2=p1;
+    printf("%d,%d\n",*p1,*p2);
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{25. 没有注意函数参数的求值顺序}
+~~
+
+例如：
+\begin{verbatim}
+  i=3;
+  printf("%d,%d,%d\n",i,++i,++i);
+\end{verbatim}
+许多人认为输出必然是
+\begin{verbatim}
+  3,4,5
+\end{verbatim}
+实际不尽然，在许多系统中输出是：
+\begin{verbatim}
+  5,5,4
+\end{verbatim}
+%------------------------------------------------------------------------
+\subsubsection*{26. 混淆数组名与指针变量的区别}
+~~
+
+例如：
+\begin{verbatim}
+  void main(void)
+  {
+    int i, a[5];
+    for (i=0; i < 5; i++)
+      scanf("%d", a++);
+    ... ...
+  }
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{27. 混淆结构类型与结构变量的区别，对结构类型赋值}
+~~
+
+例如：
+\begin{verbatim}
+  struct worker{
+    long int num;
+    char name[20];
+    char sex;
+    int age;
+  };
+  worker.num = 187045;
+  strcpy(worker.name, "Zhang Fun");
+  worker.sex = 'M';
+  worker.age = 25;
+\end{verbatim}
+
+%------------------------------------------------------------------------
+\subsubsection*{28. 使用文件忘记打开或使用不匹配的打开方式}
+~~
+
+例如：
+\begin{verbatim}
+  if ((fp = fopen("test", "r")) == NULL)
+    {
+      printf("Cannot open file.\n");
+      exit(1);
+    }
+  ch = fgetc(fp);
+  while (ch != '#')
+  {
+    ch = ch + 4;
+    fputc(ch, fp);
+    ch = fget(fp);
+  }
+\end{verbatim}
+
+程序错误可以分为两大类，一类是语法错误，另一类是逻辑错误。语法错误可以通过编译器
+的错误信息定位并排除。而逻辑错误则很难通过编译器的输出判断，这时候就需要程序员对
+算法有深入的理解和把握，并且有丰富的经验，但是仍然难以避免这样的错误。这种情况下，
+测试程序也许是一个比较有效的办法。所谓测试程序就是专门编写用来对程序的某些功能进
+行测试的代码，比如程序中有一组加解密的函数，我们可以编写一段利用这些函数进行加密、
+解密的程序，并尽可能多的生成测试不同的数据对象，通过运行的结果对这组函数进行测试。
+
+不管怎样，程序中的错误是不可避免的，写完了程序只能说明任务完成了一半，也许还
+要花更多的时间和精力去调试程序，因此在编写代码的时候，就应该注意遵循代码书写规范，
+在必要的地方写好注释，并掌握好GDB等调试工具，以最大限度的提高编程效率。
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End:

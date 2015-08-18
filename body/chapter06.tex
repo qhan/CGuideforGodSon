@@ -1,0 +1,447 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: chapter06.tex,v 1.1 2008/05/07 06:59:44 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{函~~数}\label{chap_6}
+%在一个较大的程序中，一般包括按照功能分成的若干模块，这是高级编程语言的特点之一。
+%所有的高级语言中都有子程序这个概念，子程序是用来实现模块功能的程序单元，在C语言
+%中，子程序的作用通过由函数来实现的。
+
+在C语言中，函数是用于完成特定任务的程序代码的自包含单元。使用函数主要有两个目的：
+第一，使用函数可以省去重复代码的编写，如果程序中需要多次使用特定的功能，只需要编
+写一个合适的函数，在需要该功能的时候调用函数即可；第二，即使某些功能在程序中只使
+用一次，将其以函数的形式实现也有助于使程序更加模块化，从而有利于程序的阅读、修改
+和升级。
+
+本章我们将学习如何正确定义函数、如何调用函数、如何建立函数间的通信，以及
+头文件、预处理等相关概念。
+
+\section{函数的定义与调用}
+让我们通过一个简单的例子对函数的定义与调用方法有一个直观的了解(pro-6-1.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int my_max(int x, int y);
+
+  int main(void)
+  {
+    int a, b, m;
+
+    printf("Please input two numbers:\n");
+    scanf("%d %d", &a, &b);
+    m = my_max(a, b);
+    printf("The greater number is %d\n", m);
+  
+    return 0;
+  }
+
+  int my_max(int x, int y)
+  {
+    return (x > y ? x:y);
+  }
+\end{verbatim}
+在这个例子中，我们首先在main()函数的前面声明了my\_max()函数原型，接着在main()
+函数中出
+现了对my\_max()函数的调用，而这个函数具体功能的定义是在main()函数的后面。函数的声
+明中，除了函数名之外，还要说明返回值类型
+(\verb=int=)、参数类型及定义(\verb=int x, int y=)。在函数定义中，函数体是用一对
+大括号包含的。 
+
+C语言函数的一般形式是：
+\begin{verbatim}
+  ret-type function-name(parameter list)
+  {
+    body of the function
+  }
+\end{verbatim}
+其中，\verb=ret-type=说明函数返回的数据类型，可以是除数组
+%\footnote{数组和指针是C语言的难点之一，我们将在第\ref{chap_06}章详细讨论。}
+外的任何数据类型；参数列表
+(\verb=parameter list=)是用逗号分隔的一系列类型和变量的表\footnote{在ANSI之前的
+  传统函数声明形式是可以没有参数列表的，这是很容易引起错误的。}，类型和变量名必
+须是成对出现的，因此函数的参数声明应该取这样的形式：
+\begin{verbatim}
+  func(type1 var1, type1 var2, ..., typeK varN)
+\end{verbatim}
+函数的返回值和参数都可以是空的，用\verb=void=表示，空的参数可以省略，而返回值则
+不可以\footnote{事实上，这种说法是不准确的，在早期的C语言中有一条所谓的“隐含的
+  int”规则，这个规则规定在没有明确的类型修饰符修饰的情况下，即认为是int型，所以
+  在函数不指定返回值的时候，认为返回int型值。这条规则直到C89还被支持，但在C99中
+  已经取消了，因此不建议使用这条规则。}。
+
+从C89标准开始，C语言中增加了函数原型，函数在使用前都必须作出声明。函数原型能使编
+译程序
+提供更强的类型检查，在用于调用一个函数的变量与函数的参数类型之间找出并报告有问题
+的类型转换。如果在程序中首次使用函数之前就定义了函数，那么函数的定义可以做为函数
+原型使用。
+
+函数的调用，正如我们在例子中看到的，是很方便的。通过函数名指定函数，通过参数传递
+相关的数据，通过返回值接收函数运算的结果。不过也许善于观察的你会有一点疑问，为什么
+my\_max()函数体内的变量是x和y，而调用时的参数是a和b呢？C语言究竟是通过怎样的机制
+传递这些值的？要解答这个疑惑，就要先了解C语言中形式参数(简称形参)和实际参数(简称
+实参)的概念。
+
+\section{形参与实参}
+在上一节描述的函数一般形式中，参数列表(\verb=parameter list=)中的变量被称为形参；
+而在调用函数时括号内传递给函数的变量或表达式称为实参。在第\ref{chap_2}章我们在
+探讨变量作用域的时候曾提到过形式参数，在那里我们认为形参对应一种独特的变量作用域，
+即形参比局部变量的作用域稍稍大了一点，可以被外部的语句访问到，这就使得函数可以从
+外部接收数据。形参与实参的数据传递有两种方式，一种是值传递，一种是地址传递。
+
+值传递是将实参的值拷贝到形参中，这种情况下函数对实参的值没有影响。前面的示例程序
+pro-6-1.c就是使用的值传递方式。
+
+地址传递则是将实参的地址拷贝到形参中，函数可以通过形参指向的地址直接修改实参的值，
+这种方式要在参数列表中声明的某种数据类型的指针或者数组。下面的程序是一个使用地址
+传递的例子(pro-6-2.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int my_max(int *x, int *y);
+
+  int main(void)
+  {
+    int a, b, m;
+
+    printf("Please input two numbers:\n");
+    scanf("%d %d", &a, &b);
+    printf("a = %d, b = %d.\n", a, b);
+    m = my_max(&a, &b);
+    printf("The greater number is %d\n", m);
+    printf("a = %d, b = %d.\n", a, b);
+  
+    return 0;
+  }
+
+  int my_max(int *x, int *y)
+  {
+    *x = *x > *y ? *x:*y;
+    *y = 0;
+    return *x;
+  }
+\end{verbatim}
+在这里，my\_max()函数的输入参数变成了两个int型指针，因此在调用这个函数时的实参就
+必须是变量的地址，即\verb=&a, &b=。通过增加的两条打印a和b的值的printf()语句我们
+可以看到地址传递对实参的改变，下面是这段程序的运行结果：
+\begin{verbatim}
+  Please input two numbers:
+  10 12
+  a = 10, b = 12.
+  The greater number is 12
+  a = 12, b = 0.
+\end{verbatim}
+可以看到，执行完my\_max()函数后，a和b的值都被这个函数改变了。
+
+向函数传递的数据可以是基本数据类型的数值，也可以是数组、结构体等复杂的数据类型，
+关于这些数据如何向函数传递，我们将在后面的章节详细讨论（第\ref{chap_06}章和第
+\ref{chap_07}章）。
+
+\section{函数返回值}
+有的函数不需要返回值，比如打印一行星号做分隔符的函数，但是大多数函数需要返回计算
+的结果或者运行的状态，特别是大型程序中，即使不需要返回计算结果的函数也会返回程序
+运行的结果以便调试和跟踪错误。C语言中函数返回的值包括三种：返回值、返回指针和返
+回void(无返回值)。
+
+\subsection{返回值}
+前面已经介绍过return语句用来返回一个值。在C89中，如果非void函数(也就是函数原型中
+定义了非void型的返回值的函数)中没有return语句，则返回无用值，而在C99中，这种做法
+是被禁止的，非void函数必须有返回值的return语句。值得注意的是，虽然C99中要求非
+void函数必须有返回值的return语句，但是仍然有可能出现满足标准要求但仍然执行到函数
+体的结尾花括号处的情况，比如return语句出现在一个if语句中，这时程序仍然可能返回无
+用值，gcc编译器遇到这种情况会给出一个警告。因此最好养成这样的习惯，在非void函数
+中，最后一句话一定是return语句。
+
+在调用有返回值的函数时，可以把返回值付给一个变量，但这不是必须的，不用赋值语句接
+收函数返回值时，返回值就被自动放弃了。比如下面的程序(pro-6-3.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int my_max(int x, int y);
+
+  int main(void)
+  {
+    int a, b, m;
+
+    printf("Please input two numbers:\n");
+    scanf("%d %d", &a, &b);
+    m = my_max(a,b); 
+    printf("The greater number is %d\n", my_max(a,b));
+    my_max(m, b);
+
+    return 0;
+  }
+
+  int my_max(int x, int y)
+  {
+    return (x > y ? x:y);
+  }
+\end{verbatim}
+my\_max()第一次被调用时，返回值被赋给了m，第二次被调用时其返回值直接由printf()函
+数使用了，第三次被调用的返回值则被直接丢弃了。
+
+\subsection{返回指针}
+指针是一种比较特殊的返回值，和返回普通数据类型有一些不同之处。指针是某种数据类型
+的地址，指针计算是基于它所指向的类型的，例如对整数指针进行增量操作时，如果所在平
+台的整型占用2字节，则指针值加2。也就是说指针的增量或减量操作，使得指针指向下一个
+或上一个数据项。由于每种数据类型的长度可能不同，因此返回指针的函数必须明确声明返
+回的指针类型。
+
+下面的程序(pro-6-4.c)中使用了一个返回指针的函数find\_char()，这个函数的输入是一
+个字符和一个字符串，在这个字符串中查找这个字符，然后返回匹配处的字符串的指针：
+\begin{verbatim}
+  #include <stdio.h>
+
+  char * find_char(char c, char *s);
+
+  int main(void)
+  {
+    char *p, ch;
+    char s[40] = "abcdefghijklmnopqrstuvwxyz";
+  
+    printf("Please input a char:\n");
+    ch = getchar();
+    p = find_char(ch, s);
+    if (*p)
+      printf("%s\n", p);
+    else
+      printf("No match found.\n");
+
+    return 0;  
+  }
+
+  char * find_char(char c, char *s)
+  {
+    while (c != *s && *s) s++;
+    return s;
+  }
+\end{verbatim}
+
+\subsection{无返回值}
+无返回值的函数是用void声明的，它的一个重要的用法是防止在表达式中误用该函数。比如
+exit()就是一个void型的函数，如果在表达式中使用exit()就会返回编译错误。在早期的C
+语言中没有void关键字，因此不返回任何值的函数只能默认为int类型。
+
+\section{main()函数的输入与返回值}
+main()函数是C语言中最特殊的一个函数，main()函数是被操作系统（确切的说是调用进程）
+调用并向其返回值的，用return从main()函数中返回一个值等于用同一个值调用exit()。
+
+main()函数还可以从系统获得信息，一般通过命令行向main()函数传递信息，命令行变量是
+操作系统命令行中执行程序名称后面的信息，比如我们编译程序使用的gcc命令：
+\begin{verbatim}
+  gcc -Wall -g pro-6-1.c -o pro
+\end{verbatim}
+其中“\verb=-Wall=”、“\verb=-g=”、“\verb= pro-6-1.c=”、“\verb=-o=”和
+“\verb=pro=”等字符串都是命令行变量，命令行变量是用空格分割的。
+
+用于接收命令行变量的是两个内设参量argc和argv，argc是整型变量，其中放置命令行中变
+量的总数（其中包括程序名，所以argc的值最小为1）；argv是一个字符串指针，指向由字
+符串组成的数组，数组中每个元素指向一个命令行变量。下面的例子示例了如何使用命令行
+变量（pro-6-5.c）\footnote{这个例子中我们展示了一个编程中防止错误的小技巧：在if
+  语句中判断是否相等的时候，我们把变量写在了右面，这样就可以在不小心把逻辑判断
+  符“==”误写为赋值操作符“=”时从编译器得到警告，而如果是正常的变量在左边的写
+  法，这种书写错误是不会有任何警告信息的。}： 
+\begin{verbatim}
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  int main(int argc, char *argv[])
+  {
+    if (argc < 2){
+      printf("Usage:\n    $PRO YOURNAME YOURGENDER\n"
+             "    M/m for male, F/f for female.\n");
+      exit(1);
+    }
+    if ('M' == argv[2][0] || 'm' == argv[2][0])
+      printf("Welcome, Mr. %s!\n", argv[1]);
+    else if (('F' == argv[2][0] || 'f' == argv[2][0]))
+      printf("Welcome, Ms. %s!\n", argv[1]);
+    else
+      printf("Sorry, maybe you've input the wrong "
+             "information.\n");
+  
+    return 0;
+  }
+\end{verbatim}
+argv[$*$]是一个字符串，因此也可以通过下标argv[$*$][$*$]的方式对这个字符串中的字
+符进行访问。在这个示例中，就是通过对输入性别字符串的第一个字符进行识别来判断输入
+的性别的，事实上，程序对“M”和“Man”、“Male”等输入会做出同样的反应。
+
+
+\section{嵌套与递归}
+C语言中，函数是不允许嵌套定义的，但是允许嵌套调用。下面的函数定义是非法的：
+\begin{verbatim}
+  int my_func(int x, int y)
+  {
+    int temp, temp1;
+    
+    temp = my_max(x, y);
+    printf("%d is the bigger one.\n", temp);
+
+    int my_max(int a, int b)
+    {
+      return a>b ? a:b;
+    }
+    
+    return 0;
+  }
+\end{verbatim}
+而下面函数的嵌套调用则是合法的：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int my_max(int a, int b)
+  {
+    return a>b ? a:b;
+  }
+
+  int my_func(int x, int y)
+  {
+    int temp, temp1;
+    
+    temp = my_max(x, y);
+    printf("%d is the bigger one.\n", temp);
+
+    return 0;
+  }
+
+  int main(void)
+  {
+    int x, y;
+
+    x = 10;
+    y = 12;
+    my_func(x, y);
+   
+   return 0;
+  }    
+\end{verbatim}
+
+C语言不仅允许函数嵌套调用，甚至允许函数调用自己，这就是所谓的递归函数。在“算法
+与数据结构”课程中我们将会了解，递归是一种常见的算法，而函数的递归是实现这种算法
+的一种手段。例如计算阶乘的函数就可以用递归来实现，让我们首先来分析一下阶乘的计算
+过程，如果我们要计算5的阶乘，首先来分析一下计算的过程：
+\begin{verbatim}
+  5! = 5 x 4 x 3 x 2 x 1
+     = 5 x 
+       (5-1) x     -->    (n-1), n = 5
+       (4-1) x     -->    (n-1), n = 4
+       (3-1) x     -->    (n-1), n = 3
+       (2-1)       -->    (n-1), n = 2
+\end{verbatim}
+可见，计算阶乘就是在\verb=n=取不同值时用前一轮的计算结果乘以\verb=(n-1)=，重复操
+作直到\verb!(n-1)=1!。于是我们可以用
+下面的函数来计算阶乘：
+\begin{verbatim}
+  int fact(int n)
+  {
+    int i, result;
+ 
+    result = 1;
+    for (i = 1; i <= n; i++)
+      result = result * i;
+
+    return result;
+  }
+\end{verbatim}
+如果把它写成递归的形式，则可以是这样：
+\begin{verbatim}
+  int factr(int n)
+  {
+    int result;
+    
+    if (n == 1) return (1);
+    answer  = factr(n-1) * n;
+    return (answer);
+  }
+\end{verbatim}
+非递归形式的函数比较直观，在一个循环里把1到n乘起来。而递归形式的函数稍难理解一些，
+当参数n为1时，函数返回1，否则返回\verb=factr(n-1)*n=，而\verb=factr(n-1)=再如此
+计算，直到n等于1且对函数的调用开始返回值为止。这个计算过程如图\ref{fig_6_1}所示：
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=3.5in]{./figures/chap06/fig-6-1}
+\caption{factr()函数的执行过程示意} 
+\label{fig_6_1}
+\end{figure}
+
+递归函数的主要优点在于能够使某些算法更清晰、更简洁，比如快速排序算法就很难用迭代
+的方法实现，甚至有人认为递归比迭代更便于思考问题。但是递归函数也不是万能的，有些
+情况下使用递归，既没有显著的减少程序的大小，也不能改善内存效率。甚至有的情况下递
+归远比迭代方式运行的慢，因为递归导致的反复调用开销太大。总之，要根据待解决的问题
+合理使用递归函数。编写递归函数有一项需要特别注意的事情，就是一定要在合适的地方放
+置条件语句，强迫递归调用立即返回，否则函数可能陷入无穷的调用而永远也不会返回。
+
+\section{小结}
+本章介绍了如何在程序中定义、调用函数，函数可以做为大型程序的组成模块，每个函数实
+现一个相对独立的功能。向函数传递数据是通过函数参数进行的，使用是要注意实参的传递
+方式，在第\ref{}章我们将进一步介绍如何向函数中传递更为复杂的数据：结构和其它数据
+形式。函数是通过return返回数据的。函数在使用前应该声明。函数允许嵌套调用，函数调
+用自身称为递归，递归在解决特定问题时是一种高效的手段，但使用不当也会导致内存和时
+间的浪费。
+
+
+\section{习题与上机作业}
+
+\subsection{习题}
+\begin{enumerate}
+\item 实际参数和形式参数有什么不同？
+\item 写出下列函数的函数声明：
+  \begin{enumerate}
+  \item donut()函数，接受一个int型的参数，输出相应数目的0；
+  \item gear()函数，接受两个int型的参数，返回一个int型的值；
+  \item inttochar()函数，接受一个int型的参数，返回一个char型的值；
+  \item random()函数，不接受参数，返回一个int型的值。
+  \end{enumerate}
+\item 编写一个函数，使其返回3个输入参数中的最大值。
+\item 阅读下面的程序，说出第二个if-else if语句中对命令行参数的判断方法有什么不同？
+  其效果有什么不同？原理是什么？
+\begin{verbatim}
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  int main(int argc, char *argv[])
+  {
+    if (argc < 2){
+      printf("Usage:\n    $PRO YOURNAME YOURGENDER\n"
+             "    M/m for male, F/f for female.\n");
+      exit(1);
+    }
+    if ("M" == argv[2] || "m" == argv[2])
+      printf("Welcome, Mr. %s\n", argv[1]);
+    else if (('F' == argv[2][0] || 'f' == argv[2][0]))
+      printf("Welcome, Ms. %s\n", argv[1]);
+    else
+      printf("Sorry, maybe you've input the wrong "
+             "information.\n");
+  
+    return 0;
+  }
+\end{verbatim}
+\end{enumerate}
+
+
+\subsection{上机作业}
+\begin{enumerate}
+\item 将第\ref{chap_4}章中的示例程序pro-4-1.c改写为包含若干函数的形式。
+\item 修改本章的示例程序pro-6-1.c，将main()函数前的my\_max()函数声明删掉，看看结
+  果如何？再把my\_max()函数的定义整体放置到main()函数之前呢？注意：在用gcc编译时
+  要加上“-Wall”参数，以打开所有类型的语法警告。
+\item 在一个已有程序中加入一个表达式“\verb-x = exit();-”，用“-Wall”参数编译，
+  看看结果如何？用“man 3 exit”查看exit()函数的帮助，说说前面编译结果的原因。
+\item\label{exc_1} 编写一个从命令行输入参数的程序，比较若干个输入参数的大小，并
+  打印出最大值。
+\item 把第\ref{exc_1}题的功能改写为一个函数，并编写一段测试代码，通过若干个样例
+  测试该函数的功能。
+\end{enumerate}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End: 
+
+
+

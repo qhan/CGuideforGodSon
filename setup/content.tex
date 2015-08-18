@@ -1,0 +1,27 @@
+%% 中英目录
+\renewcommand{\baselinestretch}{1}
+\fontsize{12pt}{12pt}\selectfont
+\cleardoublepage
+\pdfbookmark[0]{目~~~~录}{mulu}
+\tableofcontents    % 中文目录
+\ifxueweidoctor     % 英文目录右开
+  \clearpage{\pagestyle{empty}\cleardoublepage}
+\else%
+  \ifoneortwoside\clearpage{\pagestyle{empty}\cleardoublepage}\fi
+\fi
+\renewcommand{\baselinestretch}{1.3}
+\fontsize{12pt}{12pt}\selectfont
+\ifxueweidoctor %硕士学位论文没有英文目录
+  \tableofengcontents % 英文目录
+\fi
+
+\input{setup/figtab}  %图表索引, 如果不需要图表索引，注释掉这一句即可；
+
+\addtocontents{toc}{\protect\vskip1\baselineskip} % 中文目录增加空行
+\addtocontents{toe}{\protect\vskip1\baselineskip} % 英文目录增加空行
+
+\ifxueweidoctor
+  \clearpage{\pagestyle{empty}\cleardoublepage}   % 清除目录后面空页的页眉和页脚
+\else%
+  \ifoneortwoside\clearpage{\pagestyle{empty}\cleardoublepage}\fi  % 清除目录后面空页的页眉和页脚
+\fi                                               %  第一章 是否右开

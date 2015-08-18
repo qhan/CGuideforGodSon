@@ -1,0 +1,560 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contents: Things you need to know
+% $Id: chapter04.tex,v 1.1 2008/05/07 06:59:44 hanqi Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Things You Need to Know}
+\chapter{基本程序结构}\label{chap_4}
+本章我们将学习C语言的基本程序结构以及相应的结构控制语句。基于前面学习的基本数据
+类型和输入输出语句，我们已经可以写出简单的C语言程序了，但是如果要处理一些比较复
+杂的逻辑，比如对不同的输入进行判断并采取不同的处理，就有点无从下手了。现代的计算
+机中，真正有用的程序也不可能仅仅顺序的执行一系列计算就结束，因此，学习并掌握程序
+结构的知识，是能够编写实用程序最重要的基础。本章将介绍顺序、分支、循环、跳转等基
+本程序结构，这些基本的逻辑结构是构成复杂程序的基本单元。
+
+
+\section{顺序结构}
+从程序逻辑的角度讲，顺序也可以算是一种程序结构，尽管很多书中提到程序结构都只讲分
+支、循环等结构。顺序结构就是一种按照语句先后顺序执行的程序结构，程序运行的逻辑按
+照语句的前后顺序执行。比如前面学习的printf()和scanf()语句组成的用户交互程序，先
+打印出一些提示，然后读入用户的输入信息，再根据用户输入的信息做相应的反馈。这是一
+个典型的顺序结构，这种结构中，动作的前后关系清晰且固定。
+
+让我们以一个简单的交互程序为例，逐步添加分支、循环等功能。程序的功能描述是：要求
+用户输入姓名、性别，然后根据性别的不同显示不同的选项，直到用户键入退出键。在没有
+掌握其它结构之前，我们先用顺序结构尽可能的实现一部分该程序的功能(pro-4-1.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    char name[60];
+    int gender;
+
+    printf("Please tell me your name:\n");
+    scanf("%s", name);
+    printf("Well, %s, your gender please(0 for male, 1"
+       " for female):\n", name);
+    scanf("%d", &gender);
+    printf("You've input %d, and ...\n", gender);
+
+    return 0;
+  }
+\end{verbatim}
+至此，程序实现了输入姓名和性别的功能，但是对接下来的功能要求却无能为力了，那就让
+我们来了解一下C语言中是如何实现分支结构的吧。
+
+\section{分支结构}\label{chap_sec_fenzhi}
+C语言中，实现分支结构的语句有两类：if语句和switch语句。另外，还有
+我们在第\ref{chap_2}章中介绍过的?操作符，它是if语句的一个变形。通过分支语
+句，我们就可以实现前面例子中判断、分支的功能要求。
+
+\subsection{if语句}
+if语句被称为分支语句，因为它提供一个交汇点，在这里程序选择两个分支中的一条继续前
+进。if语句的一般形式是：
+
+\begin{tabular}{lll}
+\textbf{if} & \textit{(expression)} & \textit{statement}; \\
+\textbf{else} & \textit{statement}; & \\
+\end{tabular}
+
+其中，\textit{statement}可以是单条语句(包括空语句)，也可以是语句块，如果是语句块，
+一定别忘了用花括号把这些语句包括起来。\textit{expression}是一个表达式，它的值决
+定程序选择哪一条分支，如果这个表达式的值为真(任意非零值)，则执行紧跟在后面的语句，
+否则执行else后面的语句。如果else后面的语句是空语句，那么可以省略掉else，这样当不
+满足表达式的要求时，程序跳过下面的语句或语句块。
+
+回到本章的例子，我们可以通过if语句来给程序增加判断性别的功能，例如可以像下面的代
+码一样让程序针对男性和女性给出不同的反馈(pro-4-2.c)：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    char name[60];
+    int gender;
+    int selected;
+
+    printf("Please tell me your name:\n");
+    scanf("%s", name);
+    printf("Well, %s, your gender please(0 for male, 1"
+       " for female):\n", name);
+    scanf("%d", &gender);
+    printf("You've input %d, and ...\n", gender);
+
+    if (gender)
+      {
+        printf("Please tell me your favorite, Madam?\n");
+        printf("1. Flower;\n2. Perfume;\n3. Diamond;\n4."
+               "Roadster.\n");
+        scanf("%d", &selected);
+        printf("You selected %d, Thank you!\n", selected);
+      }
+    else
+      {
+        printf("Please tell me your favorite, Sir?\n");
+        printf("1. Cigar;\n2. Zippo;\n3. Gun;\n4."
+               "Apple iMac.\n");
+        scanf("%d", &selected);
+        printf("You selected %d, Thank you!\n",
+               selected);
+      }
+
+    return 0;
+  }
+\end{verbatim}
+在这个版本的程序里，我们利用刚刚学到的if语句，实现了对性别的判断并做出不同的操作，
+对于男性和女性分别给出了不同的选项。注意这里用来判断的表达式只是gender这个变量，
+这是一种简洁的表达方式，\verb=if (gender)=相当于\verb~if (gender != 0)~，因为if
+语句认为所有非零值都是真值，所以这两种表达式的效果是一样的\footnote{有些语言
+  支持布尔型数据类型，即取值为true/false的类型，这在带来方便的同时也在一定程度上
+  降低了语句的灵活性。}。
+
+\subsection{?操作符语句}
+回顾第\ref{chap_2}章学习的?操作符，我们发现它其实就是if语句的在特定应用场合的简化
+形式，?操作符一般只用来对变量的赋值进行选择，不能进行更复杂的操作。例如
+\verb~y = x > 10 ? 50 : 100~写成if语句是：
+\begin{verbatim}
+  if ( x > 10 )
+    y = 50;
+  else
+    y = 100;
+\end{verbatim}
+可见，?操作符语句是一种非常简练的表达方式。
+
+\subsection{嵌套if语句}
+C语言中，结构控制语句是允许嵌套的。做为另一个if语句目标的if/else语句称为嵌套if语
+句，例如下面这段代码\footnote{这段代码事实上是伪代码，伪代码实际上是一种算法表示
+  方法，可以帮助程序员在实际编程之前先澄清程序的结构。}：
+\begin{verbatim}
+  if (a)
+    {
+      if (b)
+        statement_1;
+      if (c)
+        statement_2;
+      else
+        statement_3;
+    }
+  else
+    statement_4;
+\end{verbatim}
+第二个和第三个if语句都是嵌套在第一个if语句中的。C语言标准中对嵌套的层数有规定，
+C89规定编译器最少支持15层嵌套，C99把这一限度提高到了127，而事实上大多数编译器都
+支持远大于15层的嵌套。
+
+上面的代码还引出了另一个问题，即在多个if和else的情况下两者如何匹配？在C语言中，
+else和if的匹配原则是：{\hei else总是和同一个代码块中最近的if语句匹配}。所以在前
+面的代码中，第一个else和第三个if匹配，而第二个else和第一个if匹配，因为它们两个是
+同一个代码块中最近的。
+
+\subsection{多重选择~--~else if语句}
+else if多重选择有时也称为if-else-if梯次或者if-else-if阶梯，其一般形式为：
+\begin{verbatim}
+  if (expression_1)
+    statement_1;
+  else if (expression_2)
+    statement_2;
+  else if (expression_3)
+    statement_3;
+   .
+   .
+   .
+  else
+    statement_n;
+\end{verbatim}
+其逻辑结构如图\ref{fig_4_1}所示，这种多重选择还有另一种实现方式，即switch-case语
+句，下一小节我们将了解这个语句。
+\begin{figure}
+\centering
+\includegraphics[width=5in]{./figures/chap04/fig_4_1}
+\caption{if-else-if语句的逻辑结构}
+\label{fig_4_1}
+\end{figure}
+
+\subsection{多重选择~--~switch-case语句}
+switch-case是一个多分支选择语句，这个语句逐一比较一个表达式的值和一系列数值或字
+符常量，正确匹配时则执行与该值相关的语句。switch语句的一般形式是：
+\begin{verbatim}
+  switch (expression){
+    case constant_1:
+      statement_1;
+      break;
+    case constant_2:
+      statement_2;
+      break;
+    case constant_3;
+      statement_3;
+      break;
+    .
+    .
+    .
+    default:
+      statement_n;
+  }
+\end{verbatim}
+default语句是可选的，如果没有default语句，当所有选项都未匹配时，程序不执行任何操
+作。break是一个跳转语句，作用是跳到该程序块之外的第一条语句处，用在switch语句中，
+就相当于结束该switch多重选择。
+需要注意的是，switch语句中每一个case后面的语句一般都应跟一个break语句，否则在
+执行完这个case的语句后还会执行后面的语句，产生意想不到的结果。当然，有些情况
+下也可以利用缺失break语句简化程序，但前提是程序员一定要清楚的知道程序运行的结果。
+关于一个switch语句中case语句的数量，C89中为257个，而C99规定至少支持1023个。
+
+
+再回到我们的示例程序，现在我们已经可以根据用户数据的性别显示偏爱物品的列表了，下
+面就可以用switch语句对用户输入的偏爱物品进行选择并输出相应的信息了，例如像下面这
+段代码一样显示每种物品的特点：
+\begin{verbatim}
+  ...
+  printf("You selected %d, ", selected);
+  switch (selected){
+  case 1:
+    printf("the flower!\n Flower is good gift!\n");
+    break;
+  case 2:
+    printf("the perfume!\n Perfume make you smell "
+           "good!\n");
+    break;
+  case 3:
+    printf("the diamond!\n Diamond make you seems "
+           "good!\n");
+    break;
+  case 4:
+    printf("the roadster!\n Roadster make you so "
+           "cool!\n");
+    break;
+  default:
+    printf("Maybe you inputed a wrong number, try "
+           "again!\n");
+    break;
+  }
+  ...
+\end{verbatim}
+
+至此，我们已经了解了C语言中的分支语句，if-else语句通过对表达式进行逻辑判断决定程
+序的执行方向，并可以通过else-if构造多重选择；?操作符是if语句在特定情况下的一种简
+化表达方式；switch-case语句则适合用来构造多重选择，但是只能测试是否相等，不能像
+if语句那样测试关系和逻辑表达式。
+
+\section{循环结构}
+循环语句允许反复执行同一组指令，直到达到某种条件为止。
+循环是一种非常重要的程序结构，当代的图形操作系统中大都采用消息循环的机制来实现事
+件相应，其本质上就是一种循环结构；在数值计算中，大多数算法都是通过迭代的方法求解
+的，这也离不开循环结构。这一节我们就介绍C语言中实现循环结构的两种方法：do语句和
+while语句。
+
+\subsection{for循环}
+for循环的一般形式为：
+\begin{verbatim}
+  for (initialization; condition; increment)
+    statement;
+\end{verbatim}
+其中，\verb=initialization=是一个赋值表达式，为循环的控制变量设置初值；
+\verb=condition=是一个关系表达式，决定退出循环的条件；\verb=increment=定义每次循
+环控制变量如何改变，这三部分用分号“;”分开。循环一直反复执行\verb=statement=语
+句直到关系表达式\verb=condition=的值为假。下面一段代码是一个典型的for循环的应用，
+这段程序在屏幕上打印1到100：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    int x;
+
+    for (x=1; x<=100; x++)
+      printf("%d ",x);
+
+    return 0;
+  }
+\end{verbatim}
+
+在C99标准中允许在for循环中声明变量，于是上面的程序可以把位于main()函数中
+\verb=int x=的声明放到for循环的括号内，变成\verb!for (int x=1; x<=100; x++)!。但
+是这种做法在C89中是不允许的，GCC 4以上的版本都可以很好的支持C99标准\footnote{龙
+  芯福珑电脑上的Debian Linux4.0系统中GCC版本是4.1.2。}，但是注意在
+编译时要加上“\verb!--std=c99!”的编译参数，例如：\verb!gcc --std=c99 pro.c!。
+
+for循环语句可以有很多灵活的应用，赋值表达式、关系表达式都不一定是规规矩矩的一个
+表达式，这充分体现了C语言灵活而强大的特点，下面我们介绍几种典型的变形：
+
+\begin{itemize}
+\item 多变量控制
+\end{itemize}
+
+多变量控制是指通过逗号操作符，用多个变量控制循环。回顾一下逗号操作符的作用：把
+若干表达式连在一起，返回最右侧逗号右侧的表达式的值。在for循环中，赋值表达式和增
+量表达式的值不影响循环的逻辑，关系表达式的返回值决定循环是否停止，掌握了这个特
+点，就可以根据任务的要求使用多个变量。比如用x、y两个变量的和控制循环：
+\begin{verbatim}
+  for (x=0, y=0; x+y<10; x++}
+\end{verbatim}
+下面的例子(pro-4-4.c)演示了如何通过多个变量控制循环，这个例子的目的是从字符串
+str1的两端拷贝
+字符串str2的内容，直到在串中间相遇为止。str1和str2的大小不确定，因此循环的执行条
+件需要根据字符串的长度动态确定。
+\begin{verbatim}
+  #include <stdio.h>
+  #include <string.h>
+
+  int main(void)
+  {
+    int i, j;
+    char str1[80]="XXXXXXXX XXXXXXXXXXXXXXXXX";
+    char str2[80]="This is a testing program.";
+
+    printf("%s \n", str1);
+    for (i=0, j=strlen(str2); i<=j; i++, j--)
+      {
+        str1[i]=str2[i];
+        str1[j]=str2[j];
+        printf("%s \n", str1);
+      }
+
+    return 0;
+  }
+\end{verbatim}
+
+\begin{itemize}
+\item 无限循环
+\end{itemize}
+
+如果for循环的三部分的表达式都是空的，则for循环无法找到停止条件，进入无限循环，这
+是可以用break等跳转语句停止循环。例如下面一段代码，实现了一个无限循环，直到用户
+键入字符S为止：
+\begin{verbatim}
+  for (;;)
+  {
+    read_char = getchar();
+    if (read_char == 'S') break;
+  }
+\end{verbatim}
+
+\begin{itemize}
+\item 无循环体循环
+\end{itemize}
+
+C语言中，允许语句为空语句，因此for循环的循环体也可以为空，很多时候无循环体的循环
+被用来做为延时循环，另外一些操作可以直接在for循环的表达式中完成，也造成循环体是
+空的。例如：
+\begin{verbatim}
+  for (; *str == ' '; str++);
+\end{verbatim}
+相当于越过了字符串中的空格。而用来产生延时的语句往往如下面的例子：
+\begin{verbatim}
+  for (i=0; i< delay_times; i++);
+\end{verbatim}
+需要注意的是，用来产生延迟还有更好的办法，上面的方法实现的延迟长短还取决于运行程
+序的计算机的速度，并且有的编译器将会优化掉这样的循环，因为它们认为这样的代码什么
+事情也没有做。
+
+总之，由于for循环的三部分可以包括任意有效的C表达式(包括空表达式)，因此for循环可以
+有很多种变化。熟练的借助for循环的这一特点简化程序，或者准确的理解各种变形的for循
+环程序，都需要程序员对编程语言和算法有深入的了解，如果不能准确预知代码运行的结
+果，我们还是建议使用最典型的用法，毕竟在代码的精练和稳定之间，稳定才是最重要的。
+
+
+\subsection{while循环}
+了解了for循环之后，让我们来认识C语言中的另一种类型的循环语句：while循环。一般情况
+下，for循环都是用在指定循环次数的场合，而while循环则用来构造一个循环直到指定的表
+达式为假\footnote{当然，由于循环中的表达式非常灵活，完全可以用for循环或者while循环
+  构造任何一种循环条件，只是每一种循环语句都有更适合它的循环方式。}。while循环的
+一般形式是：
+\begin{verbatim}
+  while (condition)
+    statement;
+\end{verbatim}
+其中，\verb=statement=是构成循环体的语句，可以是单个语句、语句块(要用花括号括起
+来)和空语句。\verb=condition=是任意表达式，其值为真时循环重复，为假时循环结束。
+例如下面的代码不断的循环输入字符，直到用户输入了A为止：
+\begin{verbatim}
+  char ch;
+
+  ch = '\0';
+  while (ch != 'A')
+    ch = getchar();
+\end{verbatim}
+
+回到本章开始的例子，我们也可以使用while循环使程序可以一直处于交互状态直到用户选择
+退出，例如可以这样改写程序：
+\begin{verbatim}
+  while (9 != selected)
+    {
+      printf("Please tell me your favorite, Madam?\n");
+      ... ...
+      scanf("%d", &selected);
+      printf("You selected %d, ", selected);
+      switch (selected){
+        ... ...
+      }
+    }
+\end{verbatim}
+
+while循环也有一些变形，比如：
+\begin{verbatim}
+  while ((ch = getchar()) != 'A');
+\end{verbatim}
+就是本小节第一个示例中while语句的一种变形，这是一种空循环，而循环所需做的操作都
+在循环的表达式内完成了。
+
+\subsection{do-while循环}
+for循环和while循环都是在循环执行之前对循环条件进行判断，而do-while循环则是在循环
+底部进行测试，也就是说do-while循环的循环体最少也会被执行一次。do-while循环的一般
+形式是：
+\begin{verbatim}
+  do{
+    statement;
+  }while(condition);
+\end{verbatim}
+这里的\verb=condition=和\verb=statement=与while循环中的意义相同，只是放置的位置
+有所不同。do-while循环常见的一个用法是构造菜单，因为do-while的循环体至少被执行一
+次，也就使得菜单的选择操作至少被执行一次。
+
+\section{跳转语句与函数}
+C语言中有4个跳转语句，分别是：return、goto、break和continue。跳转语句也叫无条件
+分支语句，顾名思义，当程序执行到这些语句时就会直接跳转到语句指向的位置。return和
+goto可以用在程序的任何位置，break和continue可以和任何循环语句一起使用，break还可
+以和switch多重选择一起使用。另外，exit()函数也起到无条件分支的作用，做为对比，本
+节一并介绍。
+
+\subsection{return语句}
+return语句用于从函数返回，使程序返回到函数被调用点，return可以跟随一个返回值，也
+可以不跟返回值，这取决于函数的定义。例如在我们前面多次见到的\verb=int main()=函
+数中，最后都使用了\verb=return 0;=这样的语句。在C99中规定，如果一个函数不是void
+型的，则其必须有一个返回值。有关返回值的问题，我们将在第\ref{chap_6}章介绍函数时
+进一步讨论。
+
+\subsection{goto语句}
+goto语句在早期的程序语言中非常普遍，不仅C语言，Basic等其它语言中也有goto语句，这
+在一定程度上是来源于汇编语言的编程习惯，但是在现代的高级程序语言中，goto语句都是
+不被提倡使用的，因为goto语句可能会严重影响程序的可读性，不当的使用会混乱程序的
+逻辑。goto语句的功能完全可以由其它语句实现，因此我们也建议尽量避免使用goto语句。
+goto语句一般需要一个标号指明跳转的位置，标号在语句的前面，用冒号结尾，比如下面一
+段代码实现了1到100的循环，从中还能感受到浓浓的汇编语言的气息：
+\begin{verbatim}
+  x = 1;
+  loop:
+      x++;
+      if (x<=100) goto loop;
+\end{verbatim}
+
+\subsection{break语句}
+break语句可以用在循环中越过循环终止条件强行终止循环，还可以用在switch语句中终止
+case选择。在switch语句中的应用前面已经介绍过，因此这里只介绍如何使用break终止循环。
+例如下面的代码：
+\begin{verbatim}
+  for (i=0; i<100; i++)
+  {
+    printf("%d", i);
+    if (i == 17) break;
+  }
+\end{verbatim}
+这段代码只能执行0到17的循环，因为break语句提前终止了for循环。
+break只作用于其所在的一层循环，换句话说，就是break只是和一个循环语句对应的，不能
+超越作用到外层的循环。
+
+\subsection{continue语句}
+continue语句用在循环结构中，其作用是越过下面的语句直接执行下一轮的循环，其用法和
+作用范围与break很相似，只是continue是强制执行下一轮循环，而另break是强制退出循环。
+下面的例子展示了这种用法：
+\begin{verbatim}
+  while (!done){
+    ch = getchar();
+    if (ch == '@')
+    {
+      done = 1;
+      continue;
+    }
+    putchar(ch+1);
+  }
+\end{verbatim}
+
+\subsection{exit()函数}
+与break不同的是，exit()函数的作用范围在整个程序，一旦执行exit()函数，则终止整个
+程序的运行，返回操作系统。exit()函数的一般形式为：
+\begin{verbatim}
+  void exit(int return_code);
+\end{verbatim}
+return\_{}code返回给操作系统，操作系统可以根据返回值判断程序是否是正常退出。一般情
+况下零值表示程序正常结束。exit()函数常用来对导致程序无法正常运行的错误做出反应，
+比如一个打印程序在无法检测到打印机的时候，在发出相应的提示之后就会调用exit()退出
+程序。
+
+\section{小结}
+本章我们学习了C语言中基本的程序控制语句，包括分支结构和循环结构的控制语句，每种
+结构都有多种实现的语句，对于有些任务，这些语句是可以相互替代的，但它们各自也都有
+自己擅长的应用场景。跳转语句进一步增强了分支和循环语句的功能，从而可以构造出非常
+复杂的程序逻辑。完成了本章的学习后，我们已经可以基本掌握了C语言中描述运算和操作的
+逻辑的方法，可以利用C语言完成一些简单的编程任务了，后面的章节我们会进一步学习高
+级的程序结构和数据类型，但是在学习这些专题之前，我们将介绍在linux环境下调试C
+语言程序的工具和方法--使用GDB调试C语言程序。
+
+\section{习题与上机作业}
+
+\subsection{习题}
+\begin{enumerate}
+\item 回顾本章学习的几种分支语句，对它们的功能进行描述，并说出两种多重选择语句各
+  自有什么特点和优势？
+\item for循环和do-while循环有什么不同？它们是否可以完成同样的任务？
+\item 查找更多的资料，进一步了解跳转语句goto的历史和特点，说说看为什么现代编程语
+  言都不提倡使用goto？
+\item 说出本章介绍的4种跳转语句各自的用途。
+\end{enumerate}
+
+\subsection{上机作业}
+\begin{enumerate}
+\item 编写一段程序，使用switch-case语句进行多重选择，然后在一些case后的语句中删
+  除“break;”语句，观察程序运行的结果，并解释一下原因。
+\item 改写本章的示例程序pro-4-4.c，使其具备用户交互能力，即允许用户输入替换的字
+  符串，并观察str1和str2长度不相等情况下的结果，并尝试改进。
+\item 运行本章的例子pro-4-2.c，在选择1-4时输入一个字母，观察出现什么现象？如何解
+  释这种现象？为了更清楚的观察，可以使用下面一段稍加改造的代码进行测试。(提示：
+  结合上一章对输入缓冲区的介绍，考虑这种情况是否与缓冲区有关？)
+\begin{verbatim}
+  while (9 != selected)
+   {
+     getchar();
+     printf("Please tell me your favorite, Madam?\n");
+     printf("1. Flower;\n2. Perfume;\n3. Diamond;"
+            "\n4. Roadster.\n");
+     printf("Press 9 to exit \n\n");
+     scanf("%d", &selected);
+     printf("\n@@@ %d @@@\n",selected);
+     printf("You selected %d, ", selected);
+     switch (selected){
+     case 1:
+       printf("the flower!\n Flower is good gift!\n");
+       break;
+     case 2:
+       printf("the perfume!\n Perfume make you "
+              "smell good!\n");
+       break;
+     case 3:
+       printf("the diamond!\n Diamond make you "
+              "seems good!\n");
+       break;
+     case 4:
+       printf("the roadster!\n Roadster make you "
+              "so cool!\n");
+       break;
+     case 9:
+       printf("Bye!\n");
+       break;
+     default:
+       printf("Maybe you inputed a wrong number, "
+              "try again!\n");
+       break;
+     }
+   }
+\end{verbatim}
+\item 用do-while语句改造本章示例pro-4-2.c中的菜单。
+\item 编写一个有循环结构的程序，先从键盘输入一个字符串，然后逐字显示在控制台上，
+  并分别使用break和continue语句对循环进行控制，当出现'x'时退出循环，当出现's'时不
+  显示该字符。
+\end{enumerate}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End:

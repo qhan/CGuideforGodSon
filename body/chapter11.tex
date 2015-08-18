@@ -1,0 +1,342 @@
+\chapter{预处理程序}\label{chap_11}
+C语言支持编译预处理功能，所谓的编译预处理是指在C编译器进行正常编译\footnote{正常
+  编译一般包括词法分析、语法分析、代码生成、代码优化等步骤。}之前先对程序中一些
+特殊的命令进行一定的处理，然后再将处理的结果和源程序一起进行编译。C语言提供的预
+处理功能主要通过三类指令实现，分别是：
+\begin{itemize}
+\item 宏定义指令；
+\item 文件包含指令；
+\item 条件编译指令。
+\end{itemize}
+为了与一般的C语句相区别，这些指令以符号“\#”开头。本章我们将介绍这三类预处理指
+令的用法和用途。 
+
+\section{宏定义指令：\#define}
+在C语言中，宏是通过\#define指令定义一个标志符和一个串，预处理器在源程序中发现该
+标志符就用相应的串替换它。\#define指令的一般形式是： 
+\begin{verbatim}
+  #define macro-name char-sequence
+\end{verbatim}
+注意，该语句不用分号“;”结尾，而是以新行结尾。例如我们定义两个宏：
+\begin{verbatim}
+  #define LEFT 1
+  #define RIGHT 0
+\end{verbatim}
+如果程序中有一个语句使用了这两个宏名字：
+\begin{verbatim}
+  printf("left is %d, right is %d\n", LEFT, RIGHT);
+\end{verbatim}
+则预处理器会把该语句代换为：
+\begin{verbatim}
+  printf("left is %d, right is %d\n", 1, 0);
+\end{verbatim}
+这种代换称为宏代换。
+定义好的宏可以在其它的宏定义中使用，例如：
+\begin{verbatim}
+  #define LEFT 1
+  #define RIGHT LEFT-1
+\end{verbatim}
+如果宏定义的串超过一行的长度，可以用反斜线“\verb=\=”续行，例如：
+\begin{verbatim}
+  #define STRINGL "Long long ago, there lived a king. \
+  He loved horses."
+\end{verbatim}
+宏代换最长见的一个应用就是所谓的“魔幻数字”（magic number），一般用来规定程序中
+需要多处访问的数组的尺寸，如果用常数来规定，则在数组尺寸发生变化时需要修改每一处
+用到该数组的地方，很容易遗漏。而定义一个宏来指定数组的大小，则只要修改一处就可以
+了。例如：
+\begin{verbatim}
+  #define MAX_SIZE 100
+  ... ....
+  int array[MAX_SIZE];
+  ... ...
+  for (i = 0; i < MAX_SIZE; i++) array[i] = x + i;
+  ... ...
+  for (i = 0; i < MAX_SIZE; i++) printf("%d ", array[i]);
+\end{verbatim}
+
+宏名字可以有参数，遇到宏名字时，与之有关的参数都由程序中的实际参数替换，从而实现
+类似函数的功能，这种宏称为类函数宏。例如：
+\begin{verbatim}
+  #include <stdio.h>
+
+  #define ABS(a) (a)<0 ? -(a):(a)
+
+  int main(void)
+  {
+    printf("abs(-5)=%d, abs(5)=%d\n", ABS(-5), ABS(5));
+    return 0;
+  }
+\end{verbatim}
+需要注意的是，上面的宏定义中的参数使用括号以保证其正确性，因为宏只是做简单的替换
+而不是求值，因此在一些情况下没有括号可能会导致错误，如果宏定义中没有括号，
+\verb=ABS(1-2)=将被代换为：
+\begin{verbatim}
+  1-2<0 ? -1-2:1-2
+\end{verbatim}
+这个表达式的结果将不再是我们期待的值。
+
+使用类函数宏的主要优点是速度比普通函数快，因为没有函数调用的开销，但是如果类函数
+宏的尺寸过大，复制代码会造成程序的规模增大。另外，C99支持关键字inline定义的内联
+函数，同样可以提高函数调用的速度。inline“暗示着尽可能快的调用函数”，函数代码可
+能在行内扩展而不是被调用，但inline只是对编译器的请求，有可能被忽略，这取决于具体
+的编译器实现。下面是一个定义内联函数的例子：
+\begin{verbatim}
+  inline int max(int x, int y)
+  {
+    return x>y ? x:y;
+  }
+\end{verbatim}
+
+\section{文件包含指令：\#include}
+文件包含是指一个源文件可以把另一个源文件的全部内容包含进来，C语言中是通过
+\#include指令实现文件包含的。\#include包含的对象并没有太多的限定，只要是满足C语
+法的源文件即可，但是在使用中往往用\#include来包含所谓的头文件。头文件与C源文件在
+形式上的区别在于扩展名不同，头文件一般使用“.h”做为扩展名，而不是C源文件的“.c”；
+而他们在内容上的区别在于，头文件一般用来放置一些函数声明、变量声明、结构定义、宏
+定义等相对
+“稳定”的成分，这样便于在大型的程序中把程序代码分散在多个源文件中，而这些源文件
+只要都用\#include包含它们公共部分构成的头文件即可。
+
+一个\#include指令只能指定一个被包含的文件，文件包含的一般格式是：
+\begin{verbatim}
+  #include "filename.h"
+  #include <filename.h>
+\end{verbatim}
+被包含文件名用双引号或者尖括号标记，二者的差别在于：用双引号时，系统先查找源文件
+所在目录，找不到被包含文件时再查找系统路径指定的目录；而尖括号只查找系统路径。因
+此很多程序员习惯于用双引号和尖括号来区分自己定义的头文件和系统的头文件。下面是一
+个使用头文件的例子，首先是头文件（pro-10-1.h）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  char * find_char(char c, char *s);
+\end{verbatim}
+包含这个头文件的源文件是：
+\begin{verbatim}
+  #include "pro-10-1.h"
+
+  int main(void)
+  {
+    char *p, ch;
+    char s[40] = "abcdefghijklmnopqrstuvwxyz";
+  
+    printf("Please input a char:\n");
+    ch = getchar();
+    p = find_char(ch, s);
+    printf("%s\n", s);
+
+    if (*p)
+      printf("%s\n", p);
+    else
+      printf("No match found.\n");
+
+    return 0;
+  }
+
+  char * find_char(char c, char *s)
+  {
+    while (c != *s && *s) s++;
+    return s;
+  }
+\end{verbatim}
+文件包含是可以嵌套的，即文件a包含文件b，文件c也可以包含文件a，但是如果文件c即包
+含了a又包含了b，则会出现重复的包含。为了避免重复包含，可以使用条件编译指令进行判
+断。
+
+\section{条件编译指令}
+条件编译指令可以指定一部分代码在满足一定条件的情况下才参加编译，条件编译指令有三
+种方式。
+\subsection{\#if、\#else、\#elif、\#endif}
+第一种条件编译的一般形式是：
+\begin{verbatim}
+  #if constant-expression
+    statement sequence
+  #endif
+\end{verbatim}
+其中\verb=expression=是一个常数表达式，如果表达式为真则编译接下来的代码
+\verb=statement sequence=。
+\#if、\#endif可以使用\#else和\#elif进行多重选择，如下面的形式：
+\begin{verbatim}
+  #if constant-expression
+    statement sequence 1
+  #else
+    statement sequence 2
+  #endif
+\end{verbatim}
+或者：
+\begin{verbatim}
+  #if constant-expression 1
+    statement sequence 1
+  #elif constant-expression 2
+    statement sequence 2
+  ... ...
+  #elif constant-expression n
+    statement sequence n
+  #endif
+\end{verbatim}
+这组条件编译指令判断的逻辑与if-else、else if语句的逻辑是一样的，只是条件编译指令
+是决定是否编译而不是是否执行。例如下面的程序（pro-10-2.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  #define MAX 99
+
+  int main(void)
+  {
+  #if MAX > 99
+    printf("Compile statement 1\n");
+  #elif MAX < 99
+    printf("Compile statement 2\n");
+  #else
+    printf("Compile statement 3\n");
+  #endif
+  
+    return 0;
+  } 
+\end{verbatim}
+
+\subsection{\#ifdef、\#ifndef、\#endif}
+\#ifdef、\#endif指令的一般形式是：
+\begin{verbatim}
+  #ifdef macro-name
+    statement sequence
+  #endif
+\end{verbatim}
+如果\verb=macro-name=是已经被\#define定义的宏名字，则编译其中的代码。与\#ifdef相
+反的是\#ifndef指令：
+\begin{verbatim}
+  #ifndef macro-name
+    statement sequence
+  #endif
+\end{verbatim}
+只有宏名字\verb=macro-name=没有被定义的时候，才编译下面的代码。\#ifdef、
+\#end-\\if也可以使用\#else和\#elif进行多重选择。例如下面的程序（pro-10-3.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  #define DAYS 30
+
+  int main(void)
+  {
+  #ifdef DAYS
+    printf("DAYS is %d.\n", DAYS);
+  #else
+    printf("Don't how much days.\n");
+  #endif
+
+  #ifndef MONTHS
+  #define MONTHS 12
+    printf("MONTHS should be 12.\n");
+  #endif
+
+    return 0;
+  }
+\end{verbatim}
+
+\#ifndef常用来避免重复包含头文件或重复定义，可以在包含头文件是使用\#ifndef判断，
+例如：
+\begin{verbatim}
+  #ifndef STDIO_INCLUDED
+  #define STDIO_INCLUDED
+  #include <stdio.h>
+  #endif
+\end{verbatim}
+也可以在编写头文件时加入防止重复包含的判断，如：
+\begin{verbatim}
+  #ifndef _PRO_10_1_
+  #define _PRO_10_1_
+
+  #include <stdio.h>
+
+  char * find_char(char c, char *s);
+  #endif
+\end{verbatim}
+
+\section{其它预处理指令}
+\#error指令强制编译程序停止编译，主要用于程序调试，其一般形式为：
+\begin{verbatim}
+  #error error-message
+\end{verbatim}
+当程序编译到\verb=#error=处，显示错误信息\verb=error-message=，并停止程序的编译。
+
+\#undef指令用来删除前面定义的宏名字，其一般形式为：
+\begin{verbatim}
+  #undef macro-name
+\end{verbatim}
+\#undef主要用来使宏名字局部化，将宏定义的作用限定在某一个代码段。
+
+\#defined指令和\#if指令一起使用，相当于\#ifdef指令，下面两个命令的作用是一样的：
+\begin{verbatim}
+  #if defined MACRONAME
+  #ifdef MACRONAME
+\end{verbatim}
+
+\_~\_LINE\_~\_和\_~\_FILE\_~\_是编译器预定义的标志符，\_~\_LINE\_~\_的内容是当前
+被编译代码行的行号，\_~\_FILE\_~\_的内容是当前被编译源文件的文件名。\#line指令可
+以改变这两个标志符的内容，它的一般形式为：
+\begin{verbatim}
+  #line number "filename"
+\end{verbatim}
+其中\verb="filename"=是可选的，表示要指定的\_~\_FILE\_~\_的内容，而
+\verb=number=是要指定的\_~\_LINE\_~\_的内容。这个指令主要用于调试和一些特殊用途。
+下面的程序展示了\#line的用法（pro-10-4.c）：
+\begin{verbatim}
+  #include <stdio.h>
+
+  int main(void)
+  {
+    printf("Current line_num is %d\n", __LINE__);
+  #line 100
+    printf("Now redefine __LINE__ as %d\n", __LINE__);
+    printf("Current line_num is %d\n", __LINE__);
+
+    return 0;
+  }
+\end{verbatim}
+
+\section{小结}
+本章介绍了C预处理程序的一些指令，它们主要的作用是定义宏（包括类函数宏）、包含文
+件以及进行条件编译。宏可以使程序代码更易读，而类函数宏可以提高程序运行的效率，
+C99支持的内联函数也可以实现类似的加速功能。包含文件的功能便于大型程序组织多个源
+文件，提高代码的重用性。条件编译可以提高编译的效率，防止重复包含也是条件编译指令
+的一个重要应用。使用预处理指令时需要明确的是，预处理指令并不影响程序的逻辑，宏
+（类函数宏）也不是变量（函数），预处理指令在正式编译之前都将被预处理器代换。
+
+\section{习题与上机作业}
+\subsection{习题}
+\begin{enumerate}
+\item 预处理的目的是什么？C预处理程序的主要功能是什么？
+\item 为什么带有参数的宏最好用括号把参数包括起来？
+\item 如果一个源文件需要包含本章示例中的头文件pro-10-1.h，指出下面代码是否正确：
+\begin{verbatim}
+  #include "stdio.h"
+  #include <pro-10-1.h>
+
+  int main(void)
+  {
+    ... ...
+  }
+\end{verbatim}
+\item 条件编译指令和条件语句有什么相同点和不同点？
+\item 条件编译能给编译器和程序分别带来哪些好处？
+\end{enumerate}
+
+\subsection{上机作业}
+\begin{enumerate}
+\item 定义一个带参数的宏，实现交换两个参数的值，并写出相应的演示程序。
+\item 定义一个带参数的宏，实现求余的功能，并写出相应的演示程序。
+\item 编写一个程序，要求用户输入10个以内的数值，计算并显示其中的最大值和最小值。
+  要求计算最大值和最小值的功能分别用函数实现，定义两个全局变量存储最大值和最小值，
+  用户输入数值个数的最大值10用宏定义，所有全局变量的定义、函数的声明以及宏定义都
+  放在单独的头文件中。
+\end{enumerate}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "~/now-working/document/opensource/godsonCguide/main"
+%%% End: 
+
+
+
